@@ -1,0 +1,20 @@
+{
+  "name": "stretchnow",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.1.2",
+    "svelte": "^5.56.4",
+    "vite": "^8.1.1"
+  },
+  "dependencies": {
+    "@picocss/pico": "^2.1.1",
+    "chart.js": "^4.5.1"
+  }
+}
