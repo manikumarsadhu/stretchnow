@@ -51,23 +51,23 @@
   }
 
   .stat-title {
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: var(--text, #6b7280);
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.4px;
+    letter-spacing: 0.04em;
   }
 
   .stat-value {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: var(--text-h, #111827);
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: var(--text-heading);
     line-height: 1.2;
   }
 
   .stat-subtitle {
-    font-size: 0.75rem;
-    color: #10b981;
-    font-weight: 500;
+    font-size: 0.76rem;
+    color: var(--emerald);
+    font-weight: 600;
   }
 </style>

@@ -1,14 +1,55 @@
 <script>
-  import { appStore } from './stores/app.js';
+  import { onMount } from 'svelte';
+  import { appStore, checkAndSyncAuth, navigateTo } from './stores/app.js';
+  import { client } from './lib/appwrite.js';
   import Splash from './routes/Splash.svelte';
   import Welcome from './routes/Welcome.svelte';
   import Onboarding from './routes/Onboarding.svelte';
+  import Login from './routes/Login.svelte';
   import Home from './routes/Home.svelte';
   import Break from './routes/Break.svelte';
   import Library from './routes/Library.svelte';
   import Statistics from './routes/Statistics.svelte';
   import Settings from './routes/Settings.svelte';
   import BottomNav from './components/BottomNav.svelte';
+
+  onMount(async () => {
+    // Ping Appwrite backend server on startup to verify setup
+    if (typeof client.ping === 'function') {
+      client.ping().catch((err) => {
+        console.log('Appwrite ping status:', err);
+      });
+    }
+
+    const startTime = Date.now();
+
+    // Check for existing Appwrite user session and sync progress
+    try {
+      await checkAndSyncAuth();
+    } catch (err) {
+      console.warn('Startup auth sync error:', err);
+    }
+
+    const elapsed = Date.now() - startTime;
+    const minSplashTime = 800;
+    const remainingDelay = Math.max(0, minSplashTime - elapsed);
+
+    setTimeout(() => {
+      // If returning from OAuth login redirect (e.g. ?auth=success)
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('auth') === 'success') {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      // Route dynamically depending on user onboarding or cloud connection state
+      const state = $appStore;
+      if (state.user?.appwriteId || state.user?.onboarded) {
+        navigateTo('home');
+      } else {
+        navigateTo('welcome');
+      }
+    }, remainingDelay);
+  });
 
   $: route = $appStore.route || 'splash';
   $: isDarkMode = $appStore.settings?.darkMode || false;
@@ -25,6 +66,8 @@
       <Welcome />
     {:else if route === 'onboarding'}
       <Onboarding />
+    {:else if route === 'login'}
+      <Login />
     {:else if route === 'home'}
       <Home />
     {:else if route === 'break'}

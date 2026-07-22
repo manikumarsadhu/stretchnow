@@ -4,6 +4,7 @@
   import Modal from '../components/Modal.svelte';
   import { navigateTo } from '../stores/app.js';
   import { STRETCH_CATEGORIES, STRETCHES } from '../utils/stretches.js';
+  import StretchAnimation from '../components/StretchAnimation.svelte';
 
   let selectedCategory = 'all';
   let searchQuery = '';
@@ -26,7 +27,7 @@
   }
 </script>
 
-<div class="library-screen">
+<div class="library-screen animate-fade-in">
   <div class="header">
     <h2 class="title">Stretch Library</h2>
     <p class="subtitle">Targeted routines for desk fatigue & tension relief.</p>
@@ -41,7 +42,7 @@
       placeholder="Search neck, back, wrists, eyes..."
     />
     {#if searchQuery}
-      <button class="clear-btn" on:click={() => searchQuery = ''}>
+      <button class="clear-btn" on:click={() => searchQuery = ''} aria-label="Clear search">
         <span class="material-symbols-outlined">close</span>
       </button>
     {/if}
@@ -72,7 +73,9 @@
         <button class="card-item" on:click={() => openStretchModal(s)}>
           <Card hover padding="md">
             <div class="item-inner">
-              <span class="material-symbols-outlined item-icon">{s.icon}</span>
+              <div class="item-icon-wrap">
+                <span class="material-symbols-outlined item-icon">{s.icon}</span>
+              </div>
               <div class="item-info">
                 <div class="item-top">
                   <h4 class="item-title">{s.title}</h4>
@@ -92,8 +95,10 @@
   {#if activeModalStretch}
     <Modal isOpen={true} title={activeModalStretch.title} onclose={closeModal}>
       <div class="modal-detail">
+        <!-- Dynamic Stretch Animation Guide -->
+        <StretchAnimation id={activeModalStretch.id} />
+
         <div class="detail-header">
-          <span class="material-symbols-outlined detail-icon">{activeModalStretch.icon}</span>
           <div>
             <span class="detail-target">Target: {activeModalStretch.target}</span>
             <span class="detail-time">{activeModalStretch.duration} sec • {activeModalStretch.difficulty}</span>
@@ -101,15 +106,18 @@
         </div>
 
         <h4 class="section-heading">Step-by-Step Instructions</h4>
-        <ol class="modal-steps">
-          {#each activeModalStretch.instructions as step}
-            <li>{step}</li>
+        <div class="modal-steps-wrap">
+          {#each activeModalStretch.instructions as step, idx}
+            <div class="modal-step-item">
+              <span class="step-num">{idx + 1}</span>
+              <span>{step}</span>
+            </div>
           {/each}
-        </ol>
+        </div>
 
         {#if activeModalStretch.tips}
           <div class="modal-tip">
-            <span class="material-symbols-outlined">lightbulb</span>
+            <span class="material-symbols-outlined tip-icon">lightbulb</span>
             <p>{activeModalStretch.tips}</p>
           </div>
         {/if}
@@ -129,26 +137,28 @@
 
 <style>
   .library-screen {
-    padding: 24px 20px 100px;
+    padding: 24px 20px 110px;
     max-width: 480px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     gap: 16px;
     box-sizing: border-box;
+    background: var(--bg-gradient, transparent);
   }
 
   .title {
     margin: 0;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-h, #1f2937);
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-heading);
+    letter-spacing: -0.02em;
   }
 
   .subtitle {
     margin: 4px 0 0;
-    font-size: 0.85rem;
-    color: var(--text, #6b7280);
+    font-size: 0.88rem;
+    color: var(--text-muted);
   }
 
   .search-wrap {
@@ -160,24 +170,27 @@
   .search-icon {
     position: absolute;
     left: 14px;
-    color: #94a3b8;
+    color: var(--text-muted);
     font-size: 20px;
   }
 
   .search-wrap input {
     width: 100%;
-    padding: 10px 38px;
-    border-radius: 14px;
-    border: 1px solid rgba(226, 232, 240, 0.9);
-    font-size: 0.9rem;
-    background: #ffffff;
+    padding: 12px 38px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-card);
+    font-size: 0.92rem;
+    font-family: inherit;
+    background: var(--bg-card);
+    color: var(--text-heading);
     box-sizing: border-box;
+    outline: none;
+    transition: all 0.2s ease;
   }
 
-  :global(.dark-mode) .search-wrap input {
-    background: #1e293b;
-    border-color: #334155;
-    color: #f8fafc;
+  .search-wrap input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
   }
 
   .clear-btn {
@@ -186,7 +199,9 @@
     background: transparent;
     border: none;
     cursor: pointer;
-    color: #94a3b8;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
   }
 
   .categories-scroll {
@@ -205,28 +220,23 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    background: rgba(241, 245, 249, 0.9);
-    border: 1px solid rgba(226, 232, 240, 0.9);
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
     padding: 8px 14px;
-    border-radius: 20px;
+    border-radius: 99px;
     font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--text-h, #475569);
+    font-weight: 700;
+    color: var(--text-muted);
     white-space: nowrap;
     cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  :global(.dark-mode) .cat-pill {
-    background: rgba(30, 41, 59, 0.8);
-    border-color: rgba(51, 65, 85, 0.8);
-    color: #cbd5e1;
+    transition: all 0.2s ease;
   }
 
   .cat-pill.active {
-    background: #6366f1;
+    background: var(--primary);
     color: #ffffff;
-    border-color: #6366f1;
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px var(--primary-glow);
   }
 
   .pill-icon {
@@ -257,12 +267,20 @@
     gap: 14px;
   }
 
-  .item-icon {
-    font-size: 26px;
-    color: #6366f1;
-    background: rgba(99, 102, 241, 0.1);
-    padding: 10px;
+  .item-icon-wrap {
+    width: 46px;
+    height: 46px;
+    background: var(--primary-light);
     border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .item-icon {
+    font-size: 24px;
+    color: var(--primary);
   }
 
   .item-info {
@@ -280,37 +298,37 @@
 
   .item-title {
     margin: 0;
-    font-size: 0.98rem;
+    font-size: 1rem;
     font-weight: 700;
-    color: var(--text-h, #1f2937);
+    color: var(--text-heading);
   }
 
   .badge {
     font-size: 0.7rem;
     font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 10px;
+    padding: 3px 8px;
+    border-radius: 8px;
   }
 
-  .badge-easy { background: rgba(16, 185, 129, 0.15); color: #059669; }
-  .badge-medium { background: rgba(245, 158, 11, 0.15); color: #d97706; }
-  .badge-gentle { background: rgba(59, 130, 246, 0.15); color: #2563eb; }
+  .badge-easy { background: var(--emerald-light); color: var(--emerald); }
+  .badge-medium { background: var(--amber-light); color: var(--amber); }
+  .badge-gentle { background: var(--primary-light); color: var(--primary); }
 
   .item-target {
-    font-size: 0.78rem;
-    color: var(--text, #6b7280);
+    font-size: 0.8rem;
+    color: var(--text-muted);
   }
 
   .item-duration {
-    font-size: 0.75rem;
-    color: #6366f1;
-    font-weight: 600;
+    font-size: 0.78rem;
+    color: var(--primary);
+    font-weight: 700;
   }
 
   .empty-state {
     text-align: center;
     padding: 40px 0;
-    color: #94a3b8;
+    color: var(--text-muted);
   }
 
   .empty-icon {
@@ -324,50 +342,73 @@
     margin-bottom: 16px;
   }
 
-  .detail-icon {
-    font-size: 32px;
-    color: #6366f1;
-    background: rgba(99, 102, 241, 0.12);
-    padding: 10px;
+  .detail-icon-wrap {
+    width: 52px;
+    height: 52px;
+    background: var(--primary-light);
     border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .detail-icon {
+    font-size: 30px;
+    color: var(--primary);
   }
 
   .detail-target {
     display: block;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #10b981;
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: var(--emerald);
   }
 
   .detail-time {
     font-size: 0.8rem;
-    color: var(--text, #6b7280);
+    color: var(--text-muted);
   }
 
   .section-heading {
-    margin: 12px 0 8px;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--text-h, #1f2937);
+    margin: 14px 0 10px;
+    font-size: 0.98rem;
+    font-weight: 800;
+    color: var(--text-heading);
   }
 
-  .modal-steps {
-    margin: 0;
-    padding-left: 18px;
+  .modal-steps-wrap {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
   }
 
-  .modal-steps li {
-    font-size: 0.85rem;
+  .modal-step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.88rem;
+    color: var(--text-heading);
     line-height: 1.45;
-    color: var(--text-h, #374151);
+  }
+
+  .step-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
   }
 
   .modal-tip {
-    background: rgba(245, 158, 11, 0.1);
-    border-radius: 12px;
+    background: var(--amber-light);
+    border-radius: var(--radius-sm);
     padding: 10px 14px;
     display: flex;
     align-items: center;
@@ -375,11 +416,17 @@
     margin-top: 16px;
   }
 
+  .tip-icon {
+    color: var(--amber);
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
   .modal-tip p {
     margin: 0;
-    font-size: 0.8rem;
-    color: #b45309;
-    font-weight: 500;
+    font-size: 0.82rem;
+    color: var(--amber);
+    font-weight: 600;
   }
 
   .modal-footer-btns {
@@ -389,3 +436,4 @@
     justify-content: flex-end;
   }
 </style>
+

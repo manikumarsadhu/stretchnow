@@ -41,14 +41,15 @@
 
   .toggle-label {
     font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-h, #1f2937);
+    font-weight: 700;
+    color: var(--text-heading);
   }
 
   .toggle-desc {
     font-size: 0.8rem;
-    color: var(--text, #6b7280);
+    color: var(--text-muted);
     margin-top: 2px;
+    line-height: 1.4;
   }
 
   .switch {
@@ -72,9 +73,9 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #cbd5e1;
+    background-color: var(--border-card);
     transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 26px;
+    border-radius: 99px;
   }
 
   .slider:before {
@@ -84,14 +85,14 @@
     width: 20px;
     left: 3px;
     bottom: 3px;
-    background-color: white;
+    background-color: #ffffff;
     transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   }
 
   input:checked + .slider {
-    background-color: #6366f1;
+    background-color: var(--primary);
   }
 
   input:checked + .slider:before {

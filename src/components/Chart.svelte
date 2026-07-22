@@ -98,15 +98,22 @@
 
 <style>
   .chart-card {
-    background: var(--card-bg, rgba(255, 255, 255, 0.85));
-    border: 1px solid var(--card-border, rgba(229, 231, 235, 0.8));
-    border-radius: 20px;
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-md);
     padding: 18px 20px;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
     width: 100%;
     box-sizing: border-box;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .chart-card:hover {
+    box-shadow: var(--shadow-md);
   }
 
   .chart-header {
@@ -115,9 +122,9 @@
 
   .chart-title {
     margin: 0;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-h, #1f2937);
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--text-heading);
   }
 
   .chart-canvas-container {

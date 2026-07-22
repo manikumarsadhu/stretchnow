@@ -16,7 +16,7 @@
   $: avgWater = (statistics.waterIntake.reduce((a, b) => a + b, 0) / 7).toFixed(1);
 </script>
 
-<div class="stats-screen">
+<div class="stats-screen animate-fade-in">
   <div class="header">
     <h2 class="title">Personal Analytics</h2>
     <p class="subtitle">Track your break consistency & health trends.</p>
@@ -26,19 +26,29 @@
   <div class="summary-grid">
     <Card padding="sm">
       <div class="summary-box">
-        <span class="sum-val">{totalBreaksThisWeek}</span>
-        <span class="sum-lbl">Total Breaks This Week</span>
+        <div class="sum-icon-wrap primary-light">
+          <span class="material-symbols-outlined sum-icon primary-color">self_improvement</span>
+        </div>
+        <div class="sum-info">
+          <span class="sum-val">{totalBreaksThisWeek}</span>
+          <span class="sum-lbl">Breaks This Week</span>
+        </div>
       </div>
     </Card>
     <Card padding="sm">
       <div class="summary-box">
-        <span class="sum-val">{avgWater} c</span>
-        <span class="sum-lbl">Avg Water Intake</span>
+        <div class="sum-icon-wrap cyan-light">
+          <span class="material-symbols-outlined sum-icon cyan-color">water_drop</span>
+        </div>
+        <div class="sum-info">
+          <span class="sum-val">{avgWater} c</span>
+          <span class="sum-lbl">Avg Daily Water</span>
+        </div>
       </div>
     </Card>
   </div>
 
-  <!-- 4 Reusable Charts -->
+  <!-- Reusable Charts -->
   <div class="charts-container">
     <Chart
       title="Daily Breaks Tracked"
@@ -62,7 +72,7 @@
       title="Daily Water Intake"
       labels={DAYS}
       data={statistics.waterIntake}
-      color="#3b82f6"
+      color="#0284c7"
       chartType="bar"
       unit="cups"
     />
@@ -80,26 +90,28 @@
 
 <style>
   .stats-screen {
-    padding: 24px 20px 100px;
+    padding: 24px 20px 110px;
     max-width: 480px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     gap: 18px;
     box-sizing: border-box;
+    background: var(--bg-gradient, transparent);
   }
 
   .title {
     margin: 0;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-h, #1f2937);
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-heading);
+    letter-spacing: -0.02em;
   }
 
   .subtitle {
     margin: 4px 0 0;
-    font-size: 0.85rem;
-    color: var(--text, #6b7280);
+    font-size: 0.88rem;
+    color: var(--text-muted);
   }
 
   .summary-grid {
@@ -110,24 +122,47 @@
 
   .summary-box {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 2px;
+  }
+
+  .sum-icon-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
     align-items: center;
     justify-content: center;
-    padding: 6px 0;
+    flex-shrink: 0;
+  }
+
+  .primary-light { background: var(--primary-light); }
+  .primary-color { color: var(--primary); }
+  .cyan-light { background: rgba(2, 132, 199, 0.12); }
+  .cyan-color { color: #0284c7; }
+
+  .sum-icon {
+    font-size: 22px;
+  }
+
+  .sum-info {
+    display: flex;
+    flex-direction: column;
   }
 
   .sum-val {
-    font-size: 1.4rem;
+    font-size: 1.35rem;
     font-weight: 800;
-    color: #6366f1;
+    color: var(--text-heading);
+    line-height: 1.1;
   }
 
   .sum-lbl {
     font-size: 0.72rem;
-    color: var(--text, #6b7280);
-    text-transform: uppercase;
+    color: var(--text-muted);
     font-weight: 600;
-    letter-spacing: 0.3px;
+    margin-top: 2px;
   }
 
   .charts-container {
@@ -136,3 +171,4 @@
     gap: 16px;
   }
 </style>
+

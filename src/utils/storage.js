@@ -67,7 +67,7 @@ export function loadState() {
       progress: { ...DEFAULT_STATE.progress, ...(parsed.progress || {}) },
       statistics: { ...DEFAULT_STATE.statistics, ...(parsed.statistics || {}) },
       timer: { ...DEFAULT_STATE.timer, ...(parsed.timer || {}) },
-      route: parsed.user?.onboarded ? 'home' : 'splash'
+      route: 'splash'
     };
   } catch (err) {
     console.error('Error loading StretchNow storage:', err);

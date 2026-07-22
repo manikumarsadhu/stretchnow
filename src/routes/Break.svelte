@@ -6,6 +6,7 @@
   import { appStore, completeBreak, navigateTo } from '../stores/app.js';
   import { startTimer, pauseTimer, resetTimer } from '../utils/timer.js';
   import { STRETCHES } from '../utils/stretches.js';
+  import StretchAnimation from '../components/StretchAnimation.svelte';
 
   // Select 3 guided poses for 2-minute break (40s each = 120s)
   const breakRoutine = STRETCHES.slice(0, 3);
@@ -21,7 +22,6 @@
     startTimer(
       (updateFn) => {
         remainingSeconds = updateFn(remainingSeconds);
-        // Switch pose step automatically based on time remaining
         if (remainingSeconds === 80) currentStepIndex = 1;
         if (remainingSeconds === 40) currentStepIndex = 2;
       },
@@ -69,10 +69,10 @@
   });
 </script>
 
-<div class="break-screen">
+<div class="break-screen animate-fade-in">
   <!-- Top Bar -->
   <div class="top-bar">
-    <button class="back-btn" on:click={handleFinish}>
+    <button class="back-btn" on:click={handleFinish} aria-label="Close stretch break">
       <span class="material-symbols-outlined">close</span>
     </button>
     <span class="top-title">2-Min Guided Break</span>
@@ -80,21 +80,25 @@
   </div>
 
   {#if isCompleted}
-    <div class="completion-view">
-      <div class="trophy-badge">
-        <span class="material-symbols-outlined trophy-icon">military_tech</span>
+    <div class="completion-view animate-fade-in">
+      <div class="trophy-wrapper">
+        <div class="trophy-badge">
+          <span class="material-symbols-outlined trophy-icon">military_tech</span>
+        </div>
+        <div class="glow-ring"></div>
       </div>
-      <h2>Break Completed! 🎉</h2>
-      <p>Awesome work! You earned <strong>+50 Wellness Points</strong> and took care of your posture.</p>
+      
+      <h2 class="comp-title">Break Completed! 🎉</h2>
+      <p class="comp-desc">Awesome work! You earned <strong>+50 Wellness Points</strong> and gave your spine a healthy refresh.</p>
 
       <Card padding="md">
         <div class="comp-stats">
-          <div>
+          <div class="stat-item">
             <span class="stat-num">+50</span>
             <span class="stat-lbl">Points</span>
           </div>
           <div class="divider"></div>
-          <div>
+          <div class="stat-item">
             <span class="stat-num">2:00</span>
             <span class="stat-lbl">Duration</span>
           </div>
@@ -114,23 +118,31 @@
     <!-- Current Pose Card -->
     <Card padding="md">
       <div class="pose-container">
+        <!-- Visual Stretch Animation Guide -->
+        <StretchAnimation id={currentPose.id} />
+
         <div class="pose-header">
-          <span class="material-symbols-outlined pose-icon">{currentPose.icon}</span>
-          <div>
+          <div class="pose-header-info">
             <h3 class="pose-title">{currentPose.title}</h3>
-            <span class="pose-target">Target: {currentPose.target}</span>
+            <span class="pose-target">
+              <span class="material-symbols-outlined target-bullet">adjust</span>
+              Target: {currentPose.target}
+            </span>
           </div>
         </div>
 
-        <ul class="instructions-list">
-          {#each currentPose.instructions as step}
-            <li>{step}</li>
+        <div class="instructions-wrap">
+          {#each currentPose.instructions as step, idx}
+            <div class="instruction-row">
+              <span class="step-num-badge">{idx + 1}</span>
+              <span class="instruction-text">{step}</span>
+            </div>
           {/each}
-        </ul>
+        </div>
 
         {#if currentPose.tips}
           <div class="tip-box">
-            <span class="material-symbols-outlined">info</span>
+            <span class="material-symbols-outlined tip-box-icon">info</span>
             <span>{currentPose.tips}</span>
           </div>
         {/if}
@@ -163,12 +175,13 @@
 <style>
   .break-screen {
     min-height: 100vh;
-    padding: 20px 20px 100px;
+    padding: 20px 20px 110px;
     max-width: 480px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
+    background: var(--bg-gradient, transparent);
   }
 
   .top-bar {
@@ -179,37 +192,43 @@
   }
 
   .back-btn {
-    background: rgba(0, 0, 0, 0.05);
-    border: none;
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
     border-radius: 50%;
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: var(--text, #6b7280);
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+  }
+
+  .back-btn:hover {
+    color: var(--text-heading);
+    transform: scale(1.05);
   }
 
   .top-title {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--text-h, #1f2937);
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-heading);
   }
 
   .step-indicator {
     font-size: 0.78rem;
-    font-weight: 600;
-    color: #6366f1;
-    background: rgba(99, 102, 241, 0.1);
-    padding: 4px 10px;
-    border-radius: 14px;
+    font-weight: 700;
+    color: var(--primary);
+    background: var(--primary-light);
+    padding: 5px 12px;
+    border-radius: 99px;
   }
 
   .pose-container {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
   }
 
   .pose-header {
@@ -218,55 +237,85 @@
     gap: 14px;
   }
 
-  .pose-icon {
-    font-size: 28px;
-    color: #6366f1;
-    background: rgba(99, 102, 241, 0.12);
-    padding: 10px;
-    border-radius: 14px;
+  .pose-header-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 
   .pose-title {
     margin: 0;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-h, #1f2937);
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-heading);
   }
 
   .pose-target {
-    font-size: 0.78rem;
-    color: #10b981;
+    font-size: 0.8rem;
+    color: var(--emerald);
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
-  .instructions-list {
-    margin: 4px 0 0;
-    padding-left: 18px;
+  .target-bullet {
+    font-size: 14px;
+  }
+
+  .instructions-wrap {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
+    margin-top: 4px;
   }
 
-  .instructions-list li {
-    font-size: 0.85rem;
-    color: var(--text-h, #374151);
+  .instruction-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .step-num-badge {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .instruction-text {
+    font-size: 0.88rem;
+    color: var(--text-heading);
     line-height: 1.45;
   }
 
   .tip-box {
-    background: rgba(245, 158, 11, 0.1);
-    border-radius: 12px;
+    background: var(--amber-light);
+    border-radius: var(--radius-sm);
     padding: 10px 14px;
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 0.8rem;
-    color: #b45309;
-    font-weight: 500;
+    font-size: 0.82rem;
+    color: var(--amber);
+    font-weight: 600;
+  }
+
+  .tip-box-icon {
+    font-size: 18px;
+    flex-shrink: 0;
   }
 
   .controls-bar {
-    margin-top: 24px;
+    margin-top: 22px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -279,53 +328,92 @@
     flex-direction: column;
     align-items: center;
     gap: 16px;
-    margin-top: 40px;
+    margin-top: 30px;
+  }
+
+  .trophy-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .trophy-badge {
-    width: 80px;
-    height: 80px;
+    width: 88px;
+    height: 88px;
     background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
+    box-shadow: 0 12px 30px rgba(245, 158, 11, 0.45);
+    z-index: 2;
+  }
+
+  .glow-ring {
+    position: absolute;
+    width: 110px;
+    height: 110px;
+    background: rgba(245, 158, 11, 0.2);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
   }
 
   .trophy-icon {
-    font-size: 48px;
+    font-size: 52px;
     color: #ffffff;
+  }
+
+  .comp-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text-heading);
+  }
+
+  .comp-desc {
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.5;
   }
 
   .comp-stats {
     display: flex;
     align-items: center;
     justify-content: space-around;
-    padding: 12px 24px;
+    padding: 8px 20px;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .stat-num {
     display: block;
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     font-weight: 800;
-    color: #6366f1;
+    color: var(--primary);
   }
 
   .stat-lbl {
     font-size: 0.75rem;
-    color: var(--text, #6b7280);
+    color: var(--text-muted);
     text-transform: uppercase;
+    font-weight: 700;
   }
 
   .divider {
     width: 1px;
     height: 36px;
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--border-card);
   }
 
   .comp-actions {
     width: 100%;
-    margin-top: 16px;
+    margin-top: 12px;
   }
 </style>
+
