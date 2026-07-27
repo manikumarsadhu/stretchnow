@@ -32,8 +32,7 @@ export function exportBackup(state) {
     URL.revokeObjectURL(url);
   } catch (err) {
     console.error('Failed to export StretchNow backup:', err);
-    const error = /** @type {any} */ (err);
-    throw new Error('Export failed: ' + error.message, { cause: error });
+    throw new Error('Export failed: ' + (err instanceof Error ? err.message : String(err)), { cause: err });
   }
 }
 
@@ -45,7 +44,9 @@ export function importBackup(file) {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const parsed = JSON.parse(e.target.result);
+        const result = e.target.result;
+        if (typeof result !== 'string') throw new Error('Unexpected file read result type.');
+        const parsed = JSON.parse(result);
         validateBackup(parsed);
         resolve(parsed.data);
       } catch (err) {

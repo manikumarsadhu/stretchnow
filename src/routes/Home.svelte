@@ -139,7 +139,6 @@
       if (breaksNow > prevBreaksToday) {
         if (prevBreaksToday === 0 && breaksNow === 1) showCelebration('🎉 First stretch completed!');
         else if (breaksNow >= breakGoal && prevBreaksToday < breakGoal) showCelebration('🎯 Daily break goal reached!');
-        prevBreaksToday = breaksNow;
       }
       if (waterNow >= waterGoal && prevWater < waterGoal) {
         showCelebration('💧 Daily hydration goal reached!');
@@ -147,8 +146,13 @@
       if (levelNow > prevLevel) { showCelebration(`⬆️ Level Up! You're now Level ${levelNow}!`); }
       if (streakNow > prevStreak && streakNow > 1) { showCelebration(`🔥 ${streakNow}-day streak! Keep it up!`); }
 
+      // eslint-disable-next-line no-useless-assignment
+      prevBreaksToday = breaksNow;
+      // eslint-disable-next-line no-useless-assignment
       prevWater  = waterNow;
+      // eslint-disable-next-line no-useless-assignment
       prevLevel  = levelNow;
+      // eslint-disable-next-line no-useless-assignment
       prevStreak = streakNow;
     }
   }
