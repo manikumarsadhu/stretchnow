@@ -56,7 +56,7 @@
 
   $: route = $appStore.route || 'splash';
   $: settings = $appStore.settings || {};
-  $: theme = settings.theme || 'system';
+  $: theme = settings.theme || 'light';
   
   let systemPrefersDark = false;
   onMount(() => {

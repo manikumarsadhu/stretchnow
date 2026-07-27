@@ -17,7 +17,7 @@ export const DEFAULT_STATE = {
     reminderIntervalMinutes: 45,
     darkMode: false,
     alertMode: 'tone',
-    theme: 'system',
+    theme: 'light',
     smartSchedule: {
       weekendMode: false,
       lunchStart: '12:00',
