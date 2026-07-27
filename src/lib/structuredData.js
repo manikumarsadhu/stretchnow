@@ -7,26 +7,26 @@ export function getStructuredDataJSON() {
     "@graph": [
       {
         "@type": "Organization",
-        "@id": "https://stretchnow.app/#organization",
+        "@id": "https://stretchnow.vercel.app/#organization",
         "name": "StretchNow",
-        "url": "https://stretchnow.app/",
-        "logo": "https://stretchnow.app/icon-512.png",
+        "url": "https://stretchnow.vercel.app/",
+        "logo": "https://stretchnow.vercel.app/icon-512.png",
         "description": "Creator of ergonomic stretching and wellness tools for remote workers and office professionals."
       },
       {
         "@type": "WebSite",
-        "@id": "https://stretchnow.app/#website",
-        "url": "https://stretchnow.app/",
+        "@id": "https://stretchnow.vercel.app/#website",
+        "url": "https://stretchnow.vercel.app/",
         "name": "StretchNow",
         "publisher": {
-          "@id": "https://stretchnow.app/#organization"
+          "@id": "https://stretchnow.vercel.app/#organization"
         },
         "inLanguage": "en-US"
       },
       {
         "@type": "WebApplication",
-        "@id": "https://stretchnow.app/#webapp",
-        "url": "https://stretchnow.app/",
+        "@id": "https://stretchnow.vercel.app/#webapp",
+        "url": "https://stretchnow.vercel.app/",
         "name": "StretchNow",
         "applicationCategory": "HealthApplication",
         "operatingSystem": "Any",
