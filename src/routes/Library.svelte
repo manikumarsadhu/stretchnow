@@ -44,7 +44,7 @@
 
 <div class="library-screen animate-fade-in">
   <div class="header">
-    <h2 class="title">Stretch Library</h2>
+    <h1 class="title">Stretch Library</h1>
     <p class="subtitle">Targeted routines for desk fatigue & tension relief.</p>
   </div>
 

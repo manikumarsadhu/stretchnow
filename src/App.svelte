@@ -12,7 +12,10 @@
   import Library from './routes/Library.svelte';
   import Statistics from './routes/Statistics.svelte';
   import Settings from './routes/Settings.svelte';
+  import NotFound from './routes/NotFound.svelte';
   import BottomNav from './components/BottomNav.svelte';
+  import { getRouteMetadata } from './lib/seo.js';
+  import { getStructuredDataJSON } from './lib/structuredData.js';
 
   onMount(async () => {
     // Start background operational sync loops
@@ -79,7 +82,20 @@
 
   // Routes where BottomNav should be visible
   $: showBottomNav = ['home', 'break', 'library', 'statistics', 'settings'].includes(route);
+
+  // Dynamic SEO metadata per route
+  $: meta = getRouteMetadata(route);
+  // eslint-disable-next-line no-unused-vars
+  const structuredDataJson = getStructuredDataJSON();
 </script>
+
+<svelte:head>
+  <title>{meta.title}</title>
+  <meta name="description" content={meta.description} />
+  <script type="application/ld+json">
+    {@html structuredDataJson}
+  </script>
+</svelte:head>
 
 <div class="app-shell {computedDark ? 'dark-mode' : ''} {themeClass} {largeTextClass} {highContrastClass}">
   <main class="main-content">
@@ -101,6 +117,8 @@
       <Statistics />
     {:else if route === 'settings'}
       <Settings />
+    {:else}
+      <NotFound />
     {/if}
   </main>
 

@@ -16,6 +16,7 @@
 
   let isResetModalOpen = false;
   let isAuthModalOpen = false;
+  let isPrivacyModalOpen = false;
 
   /** @type {Awaited<ReturnType<typeof runSystemDiagnostics>> | null} */
   let diagnosticsData = null;
@@ -158,7 +159,7 @@
 
 <div class="settings-screen animate-fade-in">
   <div class="header">
-    <h2 class="title">Settings & Preferences</h2>
+    <h1 class="title">Settings & Preferences</h1>
     <p class="subtitle">Customize notifications, work schedules, and cloud sync.</p>
   </div>
 
@@ -484,6 +485,12 @@
           </div>
         </li>
       </ul>
+
+      <div class="privacy-btn-wrap" style="margin-top: 1rem;">
+        <Button variant="outline" size="sm" icon="policy" onclick={() => isPrivacyModalOpen = true}>
+          View Full Privacy Policy
+        </Button>
+      </div>
     </div>
   </Card>
 
@@ -508,6 +515,31 @@
         </Button>
         <Button variant="danger" size="md" icon="delete_forever" onclick={handleResetConfirm}>
           Yes, Reset Everything
+        </Button>
+      </div>
+    </Modal>
+  {/if}
+
+  <!-- Privacy Policy Modal -->
+  {#if isPrivacyModalOpen}
+    <Modal isOpen={true} title="StretchNow Privacy Policy" onclose={() => isPrivacyModalOpen = false}>
+      <div class="privacy-modal-content" style="max-height: 60vh; overflow-y: auto; text-align: left; font-size: 0.9rem; line-height: 1.5; padding-right: 8px;">
+        <h4 style="margin-top: 0;">🔒 100% Local-First Data Storage</h4>
+        <p>By default, StretchNow is designed to be <strong>local-first</strong>. All physical wellness progress, daily logs, and preferences remain strictly on your device local storage.</p>
+        
+        <h4>🤖 AI Wellness Coach Data Usage</h4>
+        <p>When triggered, anonymized aggregate numeric stats (e.g. sitting hours, completed breaks) are sent to generate recommendations. <strong>No email, names, or location data</strong> are ever included.</p>
+
+        <h4>☁️ Appwrite Cloud Sync (Optional)</h4>
+        <p>If explicitly connected, progress data syncs securely to Appwrite Cloud so you can retain streaks across devices. You can disconnect or clear cloud data at any time.</p>
+
+        <h4>📄 Zero Tracking Cookies</h4>
+        <p>We do not track users, sell data, or embed third-party advertising pixels.</p>
+      </div>
+
+      <div slot="footer" class="modal-footer">
+        <Button variant="primary" size="md" onclick={() => isPrivacyModalOpen = false}>
+          Close Policy
         </Button>
       </div>
     </Modal>

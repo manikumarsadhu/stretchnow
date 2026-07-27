@@ -1,0 +1,26 @@
+{
+  "name": "StretchNow - Desk Stretch & Micro-Break Coach",
+  "short_name": "StretchNow",
+  "description": "Stay active and avoid strain with guided desk stretch routines, posture tips, and water intake tracking.",
+  "categories": ["health", "productivity", "lifestyle"],
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#22c55e",
+  "background_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

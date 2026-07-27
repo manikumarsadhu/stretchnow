@@ -39,7 +39,7 @@
 <div class="stats-screen animate-fade-in">
   <div class="header-section">
     <div class="header">
-      <h2 class="title">Personal Analytics</h2>
+      <h1 class="title">Personal Analytics</h1>
       <p class="subtitle">Track your break consistency & health trends.</p>
     </div>
     <div class="print-btn">

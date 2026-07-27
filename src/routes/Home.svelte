@@ -224,7 +224,7 @@
   <!-- ── Header ── -->
   <header class="header">
     <div class="user-greeting">
-      <h2 class="greeting-text">Hello, {user.name || 'Friend'} 👋</h2>
+      <h1 class="greeting-text">Hello, {user.name || 'Friend'} 👋</h1>
       <div class="status-pill">
         <span class="pulse-dot"></span>
         <span>Posture Active · {user.occupation || 'Desk Worker'}</span>
