@@ -7,7 +7,7 @@
     loginAnonymous,
     loginWithOAuth
   } from '../lib/appwrite.js';
-  import { updateProfile, appStore } from '../stores/app.js';
+  import { updateProfile } from '../stores/app.js';
 
   export let isOpen = false;
   export let onclose = () => {};
@@ -41,7 +41,8 @@
       }, 800);
     } catch (err) {
       isLoading = false;
-      errorMessage = err?.message || 'Authentication failed. Please check credentials.';
+      const error = /** @type {any} */ (err);
+      errorMessage = error?.message || 'Authentication failed. Please check credentials.';
     }
   }
 
@@ -57,15 +58,20 @@
       }, 800);
     } catch (err) {
       isLoading = false;
-      errorMessage = err?.message || 'Guest login failed.';
+      const error = /** @type {any} */ (err);
+      errorMessage = error?.message || 'Guest login failed.';
     }
   }
 
+  /**
+   * @param {string} provider
+   */
   function handleOAuth(provider) {
     try {
       loginWithOAuth(provider);
     } catch (err) {
-      errorMessage = `OAuth login failed for ${provider}: ${err?.message || err}`;
+      const error = /** @type {any} */ (err);
+      errorMessage = `OAuth login failed for ${provider}: ${error?.message || error}`;
     }
   }
 </script>

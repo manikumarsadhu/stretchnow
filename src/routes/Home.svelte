@@ -57,7 +57,7 @@
   // Goals Checklist Calculations
   $: breakGoal = user.dailyBreakGoal || 6;
   $: waterGoal = user.dailyWaterGoal || 8;
-  $: todayIndex = (new Date().getDay() + 6) % 7;
+  let todayIndex = (new Date().getDay() + 6) % 7;
   $: todaySittingHours = statistics.sittingHours ? statistics.sittingHours[todayIndex] : 7.5;
 
   $: checkBreak = progress.completedBreaksToday >= breakGoal;
@@ -78,14 +78,17 @@
 
   // Watch for undo actions reactively
   let prevActionTime = 0;
-  $: if (progress.lastAction && progress.lastAction.timestamp !== prevActionTime) {
-    prevActionTime = progress.lastAction.timestamp;
-    showUndoSnackbar = true;
-    if (undoTimeout) clearTimeout(undoTimeout);
-    undoTimeout = setTimeout(() => {
-      showUndoSnackbar = false;
-    }, 6000);
+  function handleLastAction(lastAction) {
+    if (lastAction && lastAction.timestamp !== prevActionTime) {
+      prevActionTime = lastAction.timestamp;
+      showUndoSnackbar = true;
+      if (undoTimeout) clearTimeout(undoTimeout);
+      undoTimeout = setTimeout(() => {
+        showUndoSnackbar = false;
+      }, 6000);
+    }
   }
+  $: handleLastAction(progress.lastAction);
 
   function triggerUndo() {
     undoAction();

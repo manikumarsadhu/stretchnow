@@ -32,7 +32,8 @@ export function exportBackup(state) {
     URL.revokeObjectURL(url);
   } catch (err) {
     console.error('Failed to export StretchNow backup:', err);
-    throw new Error('Export failed: ' + err.message);
+    const error = /** @type {any} */ (err);
+    throw new Error('Export failed: ' + error.message, { cause: error });
   }
 }
 

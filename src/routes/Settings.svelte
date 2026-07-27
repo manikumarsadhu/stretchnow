@@ -9,7 +9,7 @@
   import { requestNotificationPermission } from '../utils/notifications.js';
   import { exportBackup, importBackup } from '../services/backup.js';
   import { runSystemDiagnostics } from '../services/diagnostics.js';
-  import { loadLocale, t } from '../utils/i18n.js';
+  import { loadLocale } from '../utils/i18n.js';
 
   $: user = $appStore.user || {};
   $: settings = $appStore.settings || {};
@@ -50,7 +50,8 @@
       importSuccess = true;
       triggerDiagnostics();
     } catch (err) {
-      importError = err.message;
+      const error = /** @type {any} */ (err);
+      importError = error.message;
     }
   }
 
@@ -65,10 +66,6 @@
     } else {
       updateSettings({ notificationsEnabled: false });
     }
-  }
-
-  function handleToggleDarkMode(val) {
-    updateSettings({ darkMode: val, theme: val ? 'dark' : 'light' });
   }
 
   function handleToggleSound(val) {

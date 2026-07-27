@@ -1,7 +1,7 @@
 <script>
   import Modal from './Modal.svelte';
   import Button from './Button.svelte';
-  import { appStore, addReflection, updateSettings } from '../stores/app.js';
+  import { appStore, addReflection } from '../stores/app.js';
   import { calculateWellnessScore } from '../utils/wellnessScore.js';
   import { compileDailySummary } from '../utils/summaryGenerator.js';
   import { getAICoachAdvice } from '../services/aiCoach.js';

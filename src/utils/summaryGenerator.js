@@ -19,10 +19,9 @@ export function compileDailySummary(progress, user, wellnessScore) {
   const waterGoal = user.dailyWaterGoal || 8;
   
   // Calculate average sitting
-  const todayIndex = (new Date().getDay() + 6) % 7;
   const sittingHours = progress.sittingHoursToday !== undefined ? progress.sittingHoursToday : 8;
 
-  let recommendation = "Maintain current stretching frequency.";
+  let recommendation;
   if (breaksCompleted < breakGoal) {
     recommendation = `Try scheduling ${breakGoal - breaksCompleted} more stretch breaks tomorrow to offset desk load.`;
   } else if (waterCount < waterGoal) {

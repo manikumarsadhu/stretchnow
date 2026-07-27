@@ -15,11 +15,12 @@
     errorMsg = '';
     try {
       loginWithOAuth('google');
-    } catch (err) {
+    } catch {
       errorMsg = 'Failed to initiate Gmail login. Please try again.';
     }
   }
 
+  /** @param {SubmitEvent} e */
   async function handleEmailAuth(e) {
     e.preventDefault();
     errorMsg = '';
@@ -37,7 +38,8 @@
       navigateTo('home');
     } catch (err) {
       isLoading = false;
-      errorMsg = err?.message || 'Authentication error. Please check credentials.';
+      const error = /** @type {any} */ (err);
+      errorMsg = error?.message || 'Authentication error. Please check credentials.';
     }
   }
 
@@ -49,7 +51,7 @@
       await checkAndSyncAuth();
       isLoading = false;
       navigateTo('home');
-    } catch (err) {
+    } catch {
       isLoading = false;
       navigateTo('home');
     }

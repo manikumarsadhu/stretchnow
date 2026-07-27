@@ -1,4 +1,4 @@
-import { writable, get } from 'svelte/store';
+import { writable } from 'svelte/store';
 import { loadState, saveState, resetState as clearStorageState } from '../utils/storage.js';
 import { scheduleStretchReminders, stopScheduler } from '../utils/notifications.js';
 import { getCurrentUser, logoutUser, databases, DATABASE_ID } from '../lib/appwrite.js';
