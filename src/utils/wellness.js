@@ -1,10 +1,6 @@
-export function calculateWellnessScore(progress, user) {
-  const breaksPoints = (progress.completedBreaksToday || 0) * 25;
-  const streakPoints = (progress.streak || 0) * 10;
-  const waterPoints = (progress.water || 0) * 5;
-  
-  return Math.min(9999, (progress.score || 0) + breaksPoints + streakPoints + waterPoints);
-}
+import { calculateWellnessScore } from './wellnessScore.js';
+
+export { calculateWellnessScore };
 
 export function calculateWaterPercentage(waterCount, dailyGoal = 8) {
   if (!dailyGoal || dailyGoal <= 0) return 0;

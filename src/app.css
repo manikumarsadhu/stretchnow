@@ -128,3 +128,80 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(148, 163, 184, 0.6);
 }
 
+/* --- THEME VARIATIONS --- */
+
+/* Blue Theme (Light) */
+.theme-blue {
+  --primary: #0284c7;
+  --primary-hover: #0369a1;
+  --primary-light: rgba(2, 132, 199, 0.1);
+  --primary-glow: rgba(2, 132, 199, 0.25);
+  --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #f8fafc 50%, #f0fdf4 100%);
+}
+/* Blue Theme (Dark) */
+.dark-mode.theme-blue {
+  --primary: #38bdf8;
+  --primary-hover: #0284c7;
+  --primary-light: rgba(56, 189, 248, 0.15);
+  --primary-glow: rgba(56, 189, 248, 0.3);
+  --bg-gradient: linear-gradient(135deg, #082f49 0%, #0f172a 50%, #0a2f1d 100%);
+}
+
+/* Green Theme (Light) */
+.theme-green {
+  --primary: #10b981;
+  --primary-hover: #059669;
+  --primary-light: rgba(16, 185, 129, 0.1);
+  --primary-glow: rgba(16, 185, 129, 0.25);
+  --bg-gradient: linear-gradient(135deg, #d1fae5 0%, #f8fafc 50%, #f0fdf4 100%);
+}
+/* Green Theme (Dark) */
+.dark-mode.theme-green {
+  --primary: #34d399;
+  --primary-hover: #10b981;
+  --primary-light: rgba(52, 211, 153, 0.15);
+  --primary-glow: rgba(52, 211, 153, 0.3);
+  --bg-gradient: linear-gradient(135deg, #064e3b 0%, #0f172a 50%, #022c22 100%);
+}
+
+/* --- ACCESSIBILITY OVERRIDES --- */
+
+/* Large Text Mode */
+.large-text {
+  font-size: 1.12rem !important;
+}
+.large-text p, .large-text span:not(.material-symbols-outlined), .large-text button, .large-text input, .large-text select, .large-text h1, .large-text h2, .large-text h3, .large-text h4, .large-text h5 {
+  font-size: 112% !important;
+}
+
+/* High Contrast Mode (Light) */
+.high-contrast {
+  --bg-app: #ffffff !important;
+  --bg-card: #ffffff !important;
+  --bg-gradient: none !important;
+  --border-card: #000000 !important;
+  --text-main: #000000 !important;
+  --text-heading: #000000 !important;
+  --text-muted: #1e293b !important;
+  --primary: #0000ff !important;
+  --primary-hover: #000099 !important;
+  --primary-light: rgba(0, 0, 255, 0.1) !important;
+  --primary-glow: rgba(0, 0, 255, 0.3) !important;
+  border-width: 2px !important;
+}
+/* High Contrast Mode (Dark) */
+.dark-mode.high-contrast {
+  --bg-app: #000000 !important;
+  --bg-card: #000000 !important;
+  --bg-gradient: none !important;
+  --border-card: #ffffff !important;
+  --text-main: #ffffff !important;
+  --text-heading: #ffffff !important;
+  --text-muted: #cbd5e1 !important;
+  --primary: #00ff00 !important;
+  --primary-hover: #00cc00 !important;
+  --primary-light: rgba(0, 255, 0, 0.15) !important;
+  --primary-glow: rgba(0, 255, 0, 0.3) !important;
+  border-width: 2px !important;
+}
+

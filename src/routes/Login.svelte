@@ -59,7 +59,7 @@
 <div class="login-screen animate-fade-in">
   <div class="header">
     <div class="logo-box">
-      <span class="material-symbols-outlined logo-icon">self_improvement</span>
+      <img src="/icon-192.png" alt="StretchNow App Logo" class="logo-img" />
     </div>
     <h2 class="title">Welcome to StretchNow</h2>
     <p class="subtitle">Sign in to load your personalized posture stats & streak progress.</p>
@@ -173,9 +173,10 @@
     margin-bottom: 12px;
   }
 
-  .logo-icon {
-    font-size: 36px;
-    color: var(--primary);
+  .logo-img {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
   }
 
   .title {

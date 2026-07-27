@@ -10,12 +10,27 @@
   let searchQuery = '';
   let activeModalStretch = null;
 
+  // New Filters
+  let filterDifficulty = 'all';
+  let filterDuration = 'all';
+
   $: filteredStretches = STRETCHES.filter((s) => {
     const matchesCat = selectedCategory === 'all' || s.category === selectedCategory;
     const matchesSearch = !searchQuery || 
       s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      s.target.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCat && matchesSearch;
+      s.target.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (s.searchKeywords && s.searchKeywords.some(k => k.toLowerCase().includes(searchQuery.toLowerCase())));
+      
+    const matchesDifficulty = filterDifficulty === 'all' || s.difficulty.toLowerCase() === filterDifficulty;
+    
+    let matchesDuration = true;
+    if (filterDuration === 'short') {
+      matchesDuration = s.duration < 35;
+    } else if (filterDuration === 'long') {
+      matchesDuration = s.duration >= 35;
+    }
+    
+    return matchesCat && matchesSearch && matchesDifficulty && matchesDuration;
   });
 
   function openStretchModal(stretch) {
@@ -48,6 +63,28 @@
     {/if}
   </div>
 
+  <!-- Dropdown Filter Selects -->
+  <div class="filters-row">
+    <div class="filter-select-wrap">
+      <span class="material-symbols-outlined filter-select-icon">fitness_center</span>
+      <select bind:value={filterDifficulty}>
+        <option value="all">Any Difficulty</option>
+        <option value="easy">Easy Level</option>
+        <option value="medium">Medium Level</option>
+        <option value="gentle">Gentle Level</option>
+      </select>
+    </div>
+
+    <div class="filter-select-wrap">
+      <span class="material-symbols-outlined filter-select-icon">timer</span>
+      <select bind:value={filterDuration}>
+        <option value="all">Any Duration</option>
+        <option value="short">Short (&lt; 35s)</option>
+        <option value="long">Long (&ge; 35s)</option>
+      </select>
+    </div>
+  </div>
+
   <!-- Category Pills -->
   <div class="categories-scroll">
     {#each STRETCH_CATEGORIES as cat}
@@ -64,7 +101,7 @@
   <!-- Stretches Grid -->
   <div class="stretches-list">
     {#if filteredStretches.length === 0}
-      <div class="empty-state">
+      <div class="empty-state animate-fade-in">
         <span class="material-symbols-outlined empty-icon">search_off</span>
         <p>No routines match your search filter.</p>
       </div>
@@ -82,7 +119,7 @@
                   <span class="badge badge-{s.difficulty.toLowerCase()}">{s.difficulty}</span>
                 </div>
                 <span class="item-target">🎯 {s.target}</span>
-                <span class="item-duration">⏱️ {s.duration} seconds</span>
+                <span class="item-duration">⏱️ {s.duration} seconds • {s.estimatedCalories} kcal</span>
               </div>
             </div>
           </Card>
@@ -105,6 +142,28 @@
           </div>
         </div>
 
+        <!-- Routine Specifications Grid -->
+        <div class="meta-details-grid">
+          <div class="meta-detail-pill">
+            <span class="material-symbols-outlined m-ico">directions_walk</span>
+            <span>{activeModalStretch.sittingStanding || 'Sitting'}</span>
+          </div>
+          <div class="meta-detail-pill">
+            <span class="material-symbols-outlined m-ico">check_circle</span>
+            <span>{activeModalStretch.officeFriendly ? 'Office Friendly' : 'Floor Workout'}</span>
+          </div>
+          <div class="meta-detail-pill">
+            <span class="material-symbols-outlined m-ico">local_fire_department</span>
+            <span>{activeModalStretch.estimatedCalories || 1.5} kcal</span>
+          </div>
+        </div>
+
+        <h4 class="section-heading">Alignment & Benefits</h4>
+        <div class="alignment-box">
+          <p class="alignment-text"><strong>Target Muscles:</strong> {activeModalStretch.targetMuscles || activeModalStretch.target}</p>
+          <p class="alignment-text"><strong>Benefits:</strong> {activeModalStretch.benefits}</p>
+        </div>
+
         <h4 class="section-heading">Step-by-Step Instructions</h4>
         <div class="modal-steps-wrap">
           {#each activeModalStretch.instructions as step, idx}
@@ -113,6 +172,12 @@
               <span>{step}</span>
             </div>
           {/each}
+        </div>
+
+        <h4 class="section-heading">Safety & Precision</h4>
+        <div class="safety-box">
+          <p class="mistake-text">⚠️ <strong>Mistakes:</strong> {activeModalStretch.commonMistakes}</p>
+          <p class="safe-text">🛡️ <strong>Safety:</strong> {activeModalStretch.safetyPrecautions}</p>
         </div>
 
         {#if activeModalStretch.tips}
@@ -434,6 +499,112 @@
     gap: 10px;
     width: 100%;
     justify-content: flex-end;
+  }
+
+  /* Filters Row */
+  .filters-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: -4px;
+    margin-bottom: 4px;
+  }
+  .filter-select-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .filter-select-icon {
+    position: absolute;
+    left: 10px;
+    font-size: 16px;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+  .filter-select-wrap select {
+    width: 100%;
+    padding: 8px 8px 8px 30px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-card);
+    background: var(--bg-card);
+    color: var(--text-heading);
+    font-size: 0.8rem;
+    font-weight: 700;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .filter-select-wrap select:focus {
+    border-color: var(--primary);
+  }
+
+  /* Routine specifications grid */
+  .meta-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr;
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .meta-detail-pill {
+    background: var(--bg-app);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-sm);
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+  .m-ico {
+    font-size: 16px;
+    color: var(--primary);
+  }
+
+  /* Alignment and safety boxes */
+  .alignment-box {
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .alignment-text {
+    margin: 0;
+    font-size: 0.84rem;
+    color: var(--text-main);
+    line-height: 1.45;
+  }
+  .safety-box {
+    background: rgba(239, 68, 68, 0.05);
+    border: 1px solid rgba(239, 68, 68, 0.12);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .mistake-text {
+    margin: 0;
+    font-size: 0.82rem;
+    color: #b91c1c;
+    line-height: 1.4;
+  }
+  :global(.dark-mode) .mistake-text {
+    color: #f87171;
+  }
+  .safe-text {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--text-main);
+    line-height: 1.4;
   }
 </style>
 

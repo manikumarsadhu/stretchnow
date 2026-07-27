@@ -13,6 +13,13 @@ const databases = new Databases(client);
 const DATABASE_ID = "6a5e1dd9003a5437c98e";
 const COLLECTION_PROGRESS_ID = "user_progress";
 
+// Collection IDs mapping
+const COLLECTION_PROFILES_ID = "profiles";
+const COLLECTION_SETTINGS_ID = "settings";
+const COLLECTION_DAILY_LOGS_ID = "daily_logs";
+const COLLECTION_ACHIEVEMENTS_ID = "achievements";
+const COLLECTION_STATISTICS_ID = "statistics";
+
 /**
  * Register a new user with Email and Password
  */
@@ -77,63 +84,106 @@ export async function logoutUser() {
 }
 
 /**
- * Save user progress data to Appwrite Database
+ * Generic sync helper that updates a document, or creates it if not found.
  */
-export async function saveUserProgress(userId, progressData) {
-  if (!userId) return null;
+async function syncCollectionDocument(collectionId, docId, data) {
   try {
-    return await databases.updateDocument(
-      DATABASE_ID,
-      COLLECTION_PROGRESS_ID,
-      userId,
-      {
-        water: progressData.water || 0,
-        completedBreaksToday: progressData.completedBreaksToday || 0,
-        score: progressData.score || 0,
-        streak: progressData.streak || 1,
-        updatedAt: new Date().toISOString()
-      }
-    );
+    return await databases.updateDocument(DATABASE_ID, collectionId, docId, data);
   } catch (err) {
-    // If document doesn't exist, try creating it
-    if (err?.code === 404 && err?.type === 'document_not_found') {
+    if (err?.code === 404) {
       try {
-        return await databases.createDocument(
-          DATABASE_ID,
-          COLLECTION_PROGRESS_ID,
-          userId,
-          {
-            water: progressData.water || 0,
-            completedBreaksToday: progressData.completedBreaksToday || 0,
-            score: progressData.score || 0,
-            streak: progressData.streak || 1,
-            updatedAt: new Date().toISOString()
-          }
-        );
-      } catch {
-        // Silently fallback to local state if database/collection is not created yet in Appwrite console
+        return await databases.createDocument(DATABASE_ID, collectionId, docId, data);
+      } catch (createErr) {
+        console.error(`Failed to create document in collection ${collectionId}:`, createErr);
+        throw createErr;
       }
     }
+    throw err;
   }
-  return null;
+}
+
+export async function syncProfile(userId, data) {
+  return syncCollectionDocument(COLLECTION_PROFILES_ID, userId, {
+    userId,
+    displayName: data.displayName || 'Friend',
+    email: data.email || '',
+    language: data.language || 'en',
+    theme: data.theme || 'system',
+    occupation: data.occupation || '',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    updatedAt: new Date().toISOString()
+  });
+}
+
+export async function syncSettings(userId, data) {
+  return syncCollectionDocument(COLLECTION_SETTINGS_ID, userId, {
+    reminderInterval: data.reminderIntervalMinutes || 45,
+    workStart: data.workStart || '09:00',
+    workEnd: data.workEnd || '17:00',
+    weekendMode: !!data.smartSchedule?.weekendMode,
+    lunchStart: data.smartSchedule?.lunchStart || '12:00',
+    lunchEnd: data.smartSchedule?.lunchEnd || '13:00',
+    notificationEnabled: !!data.notificationsEnabled,
+    waterGoal: data.dailyWaterGoal || 8,
+    breakGoal: data.dailyBreakGoal || 6,
+    largeText: !!data.largeTextEnabled,
+    highContrast: !!data.highContrastEnabled,
+    updatedAt: new Date().toISOString()
+  });
+}
+
+export async function syncDailyLog(userId, dateStr, data) {
+  const docId = `${userId}_${dateStr}`;
+  return syncCollectionDocument(COLLECTION_DAILY_LOGS_ID, docId, {
+    userId,
+    date: dateStr,
+    breaksCompleted: data.breaksCompleted || 0,
+    breaksSkipped: data.breaksSkipped || 0,
+    stretchMinutes: data.stretchMinutes || 0,
+    waterCups: data.waterCups || 0,
+    sittingMinutes: data.sittingMinutes || 480,
+    wellnessScore: data.wellnessScore || 100,
+    xpEarned: data.xpEarned || 0,
+    mood: data.mood || '🙂',
+    notes: data.notes || '',
+    updatedAt: new Date().toISOString()
+  });
+}
+
+export async function syncAchievement(userId, badgeId) {
+  const docId = `${userId}_${badgeId}`;
+  return syncCollectionDocument(COLLECTION_ACHIEVEMENTS_ID, docId, {
+    userId,
+    badgeId,
+    unlockedAt: new Date().toISOString()
+  });
+}
+
+export async function syncStatistics(userId, data) {
+  return syncCollectionDocument(COLLECTION_STATISTICS_ID, userId, {
+    totalBreaks: data.totalBreaks || 0,
+    totalWater: data.totalWater || 0,
+    totalXP: data.totalXP || 0,
+    level: data.level || 1,
+    currentStreak: data.currentStreak || 1,
+    longestStreak: data.longestStreak || 1,
+    updatedAt: new Date().toISOString()
+  });
 }
 
 /**
- * Load user progress data from Appwrite Database
+ * Subscribes to realtime updates for user collections.
  */
-export async function loadUserProgress(userId) {
-  if (!userId) return null;
-  try {
-    const doc = await databases.getDocument(
-      DATABASE_ID,
-      COLLECTION_PROGRESS_ID,
-      userId
-    );
-    return doc;
-  } catch {
-    // Silently fallback to local state if database/collection is not created yet
-    return null;
-  }
+export function subscribeToDatabaseChanges(userId, callback) {
+  const collectionPaths = [
+    `databases.${DATABASE_ID}.collections.${COLLECTION_PROFILES_ID}.documents.${userId}`,
+    `databases.${DATABASE_ID}.collections.${COLLECTION_SETTINGS_ID}.documents.${userId}`,
+    `databases.${DATABASE_ID}.collections.${COLLECTION_STATISTICS_ID}.documents.${userId}`
+  ];
+
+  return client.subscribe(collectionPaths, (response) => {
+    callback(response);
+  });
 }
 
 export { client, account, databases, ID, Query, DATABASE_ID, COLLECTION_PROGRESS_ID };

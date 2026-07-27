@@ -1,0 +1,12 @@
+{
+  "greeting": "Hello",
+  "statusActive": "Posture Active",
+  "recommendedRoutine": "Recommended Routine",
+  "startBreak": "Start Break Now",
+  "streakDays": "Day Streak",
+  "wellnessScore": "Wellness Score",
+  "challengesTitle": "Weekly Challenges",
+  "todayGoals": "Today's Progress Goals",
+  "activityLog": "Today's Activity Log",
+  "exitFocus": "Exit Focus Mode"
+}

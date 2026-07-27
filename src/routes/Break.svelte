@@ -7,6 +7,8 @@
   import { startTimer, pauseTimer, resetTimer } from '../utils/timer.js';
   import { STRETCHES } from '../utils/stretches.js';
   import StretchAnimation from '../components/StretchAnimation.svelte';
+  import { playChime } from '../utils/notifications.js';
+  import { playRelaxationSound, stopRelaxationSound } from '../utils/sounds.js';
 
   // Select 3 guided poses for 2-minute break (40s each = 120s)
   const breakRoutine = STRETCHES.slice(0, 3);
@@ -14,20 +16,33 @@
   let remainingSeconds = 120;
   let isRunning = false;
   let isCompleted = false;
+  let selectedSound = 'none';
 
   $: currentPose = breakRoutine[currentStepIndex] || breakRoutine[0];
 
   function handleStart() {
     isRunning = true;
+    if (selectedSound !== 'none') {
+      playRelaxationSound(selectedSound);
+    }
     startTimer(
       (updateFn) => {
-        remainingSeconds = updateFn(remainingSeconds);
+        const nextSeconds = updateFn(remainingSeconds);
+        // Play chime on transitions (80s, 40s) if audio is enabled
+        if ($appStore.settings?.soundEnabled && (nextSeconds === 80 || nextSeconds === 40)) {
+          playChime();
+        }
+        remainingSeconds = nextSeconds;
         if (remainingSeconds === 80) currentStepIndex = 1;
         if (remainingSeconds === 40) currentStepIndex = 2;
       },
       () => {
         isRunning = false;
         isCompleted = true;
+        stopRelaxationSound();
+        if ($appStore.settings?.soundEnabled) {
+          playChime();
+        }
         completeBreak(50);
       }
     );
@@ -36,6 +51,7 @@
   function handlePause() {
     isRunning = false;
     pauseTimer();
+    stopRelaxationSound();
   }
 
   function handleReset() {
@@ -60,14 +76,58 @@
     navigateTo('home');
   }
 
+  function handleSoundChange(e) {
+    selectedSound = e.target.value;
+    if (selectedSound === 'none') {
+      stopRelaxationSound();
+    } else if (isRunning) {
+      playRelaxationSound(selectedSound);
+    } else {
+      // Play immediately if selected, even if paused
+      playRelaxationSound(selectedSound);
+    }
+  }
+
+  function handleKeydown(e) {
+    if (isCompleted) return;
+    
+    // Ignore input text areas if any (none on this page, but good safety)
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+    switch (e.key) {
+      case ' ':
+        e.preventDefault();
+        if (isRunning) {
+          handlePause();
+        } else {
+          handleStart();
+        }
+        break;
+      case 's':
+      case 'S':
+        handleSkipStep();
+        break;
+      case 'r':
+      case 'R':
+        handleReset();
+        break;
+      case 'Escape':
+        handleFinish();
+        break;
+    }
+  }
+
   onMount(() => {
     handleStart();
   });
 
   onDestroy(() => {
     resetTimer();
+    stopRelaxationSound();
   });
 </script>
+
+<svelte:window on:keydown={handleKeydown} />
 
 <div class="break-screen animate-fade-in">
   <!-- Top Bar -->
@@ -148,6 +208,19 @@
         {/if}
       </div>
     </Card>
+
+    <!-- Relaxation Sounds Panel -->
+    <div class="sounds-panel">
+      <span class="material-symbols-outlined sound-panel-icon">music_note</span>
+      <span class="sounds-label">Relaxation Audio:</span>
+      <select class="sounds-select" value={selectedSound} on:change={handleSoundChange}>
+        <option value="none">🔇 Muted</option>
+        <option value="ocean">🌊 Ocean Waves</option>
+        <option value="rain">🌧️ Gentle Rain</option>
+        <option value="forest">🌲 Whistling Wind</option>
+        <option value="white_noise">💨 Steady White Noise</option>
+      </select>
+    </div>
 
     <!-- Controls -->
     <div class="controls-bar">
@@ -414,6 +487,38 @@
   .comp-actions {
     width: 100%;
     margin-top: 12px;
+  }
+
+  /* Relaxation sounds selector styles */
+  .sounds-panel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    margin: 14px 0 6px;
+    box-shadow: var(--shadow-sm);
+  }
+  .sound-panel-icon {
+    font-size: 20px;
+    color: var(--primary);
+  }
+  .sounds-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+  .sounds-select {
+    flex-grow: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-heading);
+    font-size: 0.82rem;
+    font-weight: 700;
+    outline: none;
+    cursor: pointer;
   }
 </style>
 

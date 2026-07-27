@@ -1,6 +1,7 @@
 const STORAGE_KEY = 'stretchnow_v1_data';
 
 export const DEFAULT_STATE = {
+  version: 2,
   user: {
     name: 'Friend',
     occupation: 'Desk Worker',
@@ -14,13 +15,31 @@ export const DEFAULT_STATE = {
     soundEnabled: true,
     notificationsEnabled: false,
     reminderIntervalMinutes: 45,
-    darkMode: false
+    darkMode: false,
+    alertMode: 'tone',
+    theme: 'system',
+    smartSchedule: {
+      weekendMode: false,
+      lunchStart: '12:00',
+      lunchEnd: '13:00',
+      snoozeDuration: 15,
+      activeMeetingMode: false
+    }
   },
   progress: {
     water: 0,
     streak: 1,
     score: 120,
+    xp: 0,
+    level: 1,
+    badges: [],
     completedBreaksToday: 0,
+    consecutiveSkips: 0,
+    lastBreakTime: Date.now(),
+    tutorialCompleted: false,
+    lastSummaryShownDate: null,
+    timeline: [],
+    reflections: {},
     lastActiveDate: new Date().toISOString().split('T')[0]
   },
   statistics: {
@@ -56,12 +75,15 @@ export function loadState() {
         ...parsed.progress,
         water: 0,
         completedBreaksToday: 0,
+        consecutiveSkips: 0,
+        timeline: [],
         streak: maintainedStreak ? parsed.progress.streak + 1 : (parsed.progress.completedBreaksToday > 0 ? parsed.progress.streak : 1),
         lastActiveDate: today
       };
     }
     
     return {
+      version: parsed.version || 2,
       user: { ...DEFAULT_STATE.user, ...(parsed.user || {}) },
       settings: { ...DEFAULT_STATE.settings, ...(parsed.settings || {}) },
       progress: { ...DEFAULT_STATE.progress, ...(parsed.progress || {}) },
@@ -78,6 +100,7 @@ export function loadState() {
 export function saveState(state) {
   try {
     const toSave = {
+      version: state.version || 2,
       user: state.user,
       settings: state.settings,
       progress: state.progress,

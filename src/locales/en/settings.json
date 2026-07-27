@@ -1,0 +1,10 @@
+{
+  "title": "Settings",
+  "theme": "Color Theme",
+  "notifications": "Stretch Reminders",
+  "sound": "Relaxation Sound Options",
+  "backupRestore": "Backup & Restore",
+  "diagnostics": "System Diagnostics",
+  "privacy": "Privacy Settings",
+  "resetData": "Reset All Local Data"
+}

@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { appStore, checkAndSyncAuth, navigateTo } from './stores/app.js';
   import { client } from './lib/appwrite.js';
+  import { initSyncManager } from './sync/manager.js';
   import Splash from './routes/Splash.svelte';
   import Welcome from './routes/Welcome.svelte';
   import Onboarding from './routes/Onboarding.svelte';
@@ -14,6 +15,8 @@
   import BottomNav from './components/BottomNav.svelte';
 
   onMount(async () => {
+    // Start background operational sync loops
+    initSyncManager();
     // Ping Appwrite backend server on startup to verify setup
     if (typeof client.ping === 'function') {
       client.ping().catch((err) => {
@@ -52,13 +55,33 @@
   });
 
   $: route = $appStore.route || 'splash';
-  $: isDarkMode = $appStore.settings?.darkMode || false;
+  $: settings = $appStore.settings || {};
+  $: theme = settings.theme || 'system';
+  
+  let systemPrefersDark = false;
+  onMount(() => {
+    if (typeof window !== 'undefined') {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      systemPrefersDark = mq.matches;
+      /** @param {MediaQueryListEvent} e */
+      const listener = (e) => {
+        systemPrefersDark = e.matches;
+      };
+      mq.addEventListener('change', listener);
+      return () => mq.removeEventListener('change', listener);
+    }
+  });
+
+  $: computedDark = theme === 'dark' || (theme === 'system' && systemPrefersDark);
+  $: themeClass = (theme === 'blue' || theme === 'green') ? `theme-${theme}` : '';
+  $: largeTextClass = settings.largeTextEnabled ? 'large-text' : '';
+  $: highContrastClass = settings.highContrastEnabled ? 'high-contrast' : '';
 
   // Routes where BottomNav should be visible
   $: showBottomNav = ['home', 'break', 'library', 'statistics', 'settings'].includes(route);
 </script>
 
-<div class="app-shell {isDarkMode ? 'dark-mode' : ''}">
+<div class="app-shell {computedDark ? 'dark-mode' : ''} {themeClass} {largeTextClass} {highContrastClass}">
   <main class="main-content">
     {#if route === 'splash'}
       <Splash />

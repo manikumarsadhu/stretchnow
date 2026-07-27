@@ -7,7 +7,7 @@
   
   <div class="logo-wrapper">
     <div class="logo-pulse">
-      <span class="material-symbols-outlined logo-icon">self_improvement</span>
+      <img src="/icon-192.png" alt="StretchNow App Logo" class="logo-img" />
     </div>
     <div class="sparkle sparkle-1"></div>
     <div class="sparkle sparkle-2"></div>
@@ -70,9 +70,10 @@
     animation: splashPulse 2s infinite ease-in-out;
   }
 
-  .logo-icon {
-    font-size: 58px;
-    color: #ffffff;
+  .logo-img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
     filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
   }
 

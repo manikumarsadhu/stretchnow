@@ -1,43 +1,141 @@
-# Svelte + Vite
+# StretchNow 🧘‍♂️
 
-This template should help get you started developing with Svelte in Vite.
+> Transform your workday posture, keep repetitive strains at bay, and build healthy micro-habits right from your desk.
 
-## Recommended IDE Setup
+![StretchNow Banner](./public/screenshots/stretchnow_banner.png)
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+StretchNow is a responsive, installable Progressive Web App (PWA) serving as a physical wellness companion. Designed for software engineers, designers, and office workers, it triggers non-intrusive timed break alerts, guides you through equipment-free office stretches with custom visual animations, and tracks your daily water intake and sedentary trends.
 
-## Need an official Svelte framework?
+---
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+## ✨ Features Overview
 
-## Technical considerations
+### 1. ⚙️ Smart Work Schedule & Custom Reminders
+* Set your active work hours (e.g., `09:00 - 17:00`) and break frequency.
+* **Meeting Mode (DND)**: A simple toggle in settings to silence all reminders during calls.
+* **Lunch Break Pause**: Automatically skips reminders during your set lunch window.
+* **Weekend Mode**: Toggle stretch reminders on Saturdays/Sundays off or on.
+* **Rotated Alerts**: Keeps notifications fresh with a library of rotating prompts (e.g., *"Your spine needs you 😊"*, *"Screen fatigue? 👀"*).
 
-**Why use this over SvelteKit?**
+### 2. ⚡ Gamification & Motivation
+* **Level & XP Bar**: Earn **+50 XP** for each completed break. Check your leveling progress directly on the dashboard.
+* **Daily Streak Counter**: Tracks consecutive days of posture health.
+* **Weekly Challenges**: Complete checklists like *Stretch Master Weekly* (15 breaks/week) or *Hydration Regular* (5 water goals/week).
+* **Achievement Badges**: Unlock medals (e.g., *7-Day Streak*, *Posture Starter*, *Early Bird*, *Hydration Hero*) dynamically based on your habits.
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
+### 3. ⏱️ Interactive Guided Stretch Poses
+* **2-Minute Breaks**: 3 targeted poses (40 seconds each) designed to release desk tension.
+* **Audio Cues**: Plays gentle chimes on step transitions and timer completion.
+* **Ambient Relaxation Loops**: Select from client-side synthesized soundscapes (Ocean waves, Raindrops, Whistling wind, White noise) playing directly inside your active break.
 
-This template contains as little as possible to get started with Vite + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
+### 4. 🎨 Themes & Custom Accessibility
+* **Color Themes**: Toggle between **Light**, **Dark**, **System Default**, **Ocean Blue**, and **Forest Green**.
+* **Large Text Mode**: Scale app typography up by 12% globally for easier screen reading.
+* **High Contrast Mode**: Increases element outlines and color contrast thresholds to comply with WCAG guidelines.
 
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
+### 5. 📊 Wellness Analytics
+* Real-time **Wellness Score** star ratings computed daily from your breaks, water intake, streaks, and sitting limits.
+* Visual bar and line charts logging daily breaks, weekly posture goals, water consumption, and total sedentary hours.
+* **Export PDF**: Click "Export PDF" in the Analytics page to invoke a print-styled layout optimized for physical paper or digital saving.
 
-**Why include `.vscode/extensions.json`?**
+---
 
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
+## 📂 Project Directory Structure
 
-**Why enable `checkJs` in the JS template?**
-
-It is likely that most cases of changing variable types in runtime are likely to be accidental, rather than deliberate. This provides advanced typechecking out of the box. Should you like to take advantage of the dynamically-typed nature of JavaScript, it is trivial to change the configuration.
-
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/sveltejs/svelte-hmr/tree/master/packages/svelte-hmr#preservation-of-local-state).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
-
-```js
-// store.js
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
 ```
+stretchnow/
+├── public/                # Static assets (PWA Icons, SVG Favicon)
+│   └── screenshots/       # Application banner screenshots
+│
+├── src/
+│   ├── components/        # Reusable Svelte UI Components
+│   │   ├── InlineTutorial.svelte      # Onboarding guide checklist
+│   │   ├── WellnessSummaryModal.svelte# Daily review report modal
+│   │   ├── BadgesList.svelte          # Badge grid layout
+│   │   ├── ProgressRing.svelte        # Circular timers SVG
+│   │   └── ...
+│   │
+│   ├── routes/            # Main application screen views
+│   │   ├── Home.svelte        # Main dashboard and timeline feed
+│   │   ├── Settings.svelte    # Backup actions, Diagnostics, and Privacy
+│   │   ├── Library.svelte     # Search, filter, and detail modal
+│   │   └── ...
+│   │
+│   ├── services/          # Business logic layers
+│   │   ├── backup.js          # Export/Import JSON utilities
+│   │   ├── diagnostics.js     # Permission and system diagnostics
+│   │   ├── scheduler.js       # Skips escalation intervals
+│   │   └── aiCoach.js         # HuggingFace prompt calling API
+│   │
+│   ├── validators/        # Schema validators
+│   │   └── backupValidator.js # JSON file structure integrity
+│   │
+│   ├── utils/             # Helper utilities
+│   │   ├── wellnessScore.js   # Score indexes formulas
+│   │   ├── storage.js         # Local Storage persistence
+│   │   └── sounds.js          # Web Audio nature synth
+│   │
+│   ├── App.svelte         # Primary shell routing
+│   └── main.js            # Entry index setup
+```
+
+---
+
+## ⌨️ Active Break Keyboard Shortcuts
+
+During an active stretching timer, you can control the screen completely hands-free:
+
+| Key | Action |
+| :--- | :--- |
+| **`Space`** | Toggle Play / Pause Timer (stops/resumes background audio loops simultaneously) |
+| **`S`** | Skip current stretch step and advance to the next pose |
+| **`R`** | Reset active break timer back to the first step |
+| **`Escape`** | Quit and return to the main dashboard |
+
+---
+
+## 🛠️ Local Development & Installation
+
+### Requirements
+* [Node.js](https://nodejs.org/) (Version 18+)
+* npm (bundled with Node)
+
+### 1. Install Dependencies
+```bash
+npm install
+```
+
+### 2. Run Local Development Server
+```bash
+npm run dev
+```
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### 3. Production Build & PWA Generation
+```bash
+npm run build
+```
+Vite will compile the production bundle to `/dist`, registering the PWA service worker cache manifests.
+
+---
+
+## 🚀 Release Milestones & Roadmap
+
+* **Version 1.0 (Current)**: Adaptive break scheduling, detailed stretch metadata, inline tutorial checkpoints, local backup/restore downloads, system diagnostics indicators, and full offline PWA setups.
+* **Version 1.1**: Expanded stretch routines library, customized relaxation sounds volumes, and additional color themes.
+* **Version 2.0**: Cloud synchronization (Appwrite account sync), hardware/health platforms integrations (Google Health, Apple Health), and automated suppressions during calendar meetings.
+
+---
+
+## 📖 Architecture & Portfolio Blueprint
+For a detailed review of the state design diagrams, database layout schemas, and design constraints, view the [PORTFOLIO_ENGINEERING.md](file:///e:/mani-entrepreneur/stretchnow/PORTFOLIO_ENGINEERING.md) file.
+
+---
+
+## 🤝 Contributing
+Contributions are welcome! Please view the [CONTRIBUTING.md](file:///e:/mani-entrepreneur/stretchnow/CONTRIBUTING.md) guide for details on development loops and Pull Request requirements.
+
+---
+
+## 📄 License
+This project is licensed under the [MIT License](LICENSE).
