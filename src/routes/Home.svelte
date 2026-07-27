@@ -38,7 +38,8 @@
   let focusMode      = false;
   let isSummaryOpen  = false;
   let showUndoSnackbar = false;
-  let undoTimeout: ReturnType<typeof setTimeout> | null = null;
+  /** @type {ReturnType<typeof setTimeout> | null} */
+  let undoTimeout = null;
 
   // Goals
   $: breakGoal        = user.dailyBreakGoal || 6;
