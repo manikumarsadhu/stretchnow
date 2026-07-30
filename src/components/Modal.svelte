@@ -2,6 +2,7 @@
 
   export let isOpen = false;
   export let title = '';
+  export let icon = '';
   export let onclose = () => {};
 
   function handleBackdrop(e) {
@@ -16,6 +17,9 @@
   <div class="modal-backdrop" on:click={handleBackdrop} on:keydown={(e) => e.key === 'Escape' && onclose()} role="dialog" aria-modal="true" tabindex="-1">
     <div class="modal-card">
       <div class="modal-header">
+        {#if icon}
+          <span class="material-symbols-outlined modal-icon">{icon}</span>
+        {/if}
         <h3 class="modal-title">{title}</h3>
         <button class="close-btn" on:click={onclose}>
           <span class="material-symbols-outlined">close</span>

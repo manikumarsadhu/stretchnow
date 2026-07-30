@@ -14,6 +14,10 @@
   import Settings from './routes/Settings.svelte';
   import NotFound from './routes/NotFound.svelte';
   import BottomNav from './components/BottomNav.svelte';
+  import AlarmModal from './components/AlarmModal.svelte';
+  import SnoozeBanner from './components/SnoozeBanner.svelte';
+  import AdaptiveIntervalModal from './components/AdaptiveIntervalModal.svelte';
+  import { closeAdaptiveModal } from './stores/app.js';
   import { getRouteMetadata } from './lib/seo.js';
   import { getStructuredDataJSON } from './lib/structuredData.js';
 
@@ -124,6 +128,16 @@
 
   {#if showBottomNav}
     <BottomNav />
+  {/if}
+
+  <SnoozeBanner />
+
+  {#if $appStore.isAlarmRinging}
+    <AlarmModal />
+  {/if}
+
+  {#if $appStore.showAdaptiveModal}
+    <AdaptiveIntervalModal isOpen={true} onclose={closeAdaptiveModal} />
   {/if}
 </div>
 

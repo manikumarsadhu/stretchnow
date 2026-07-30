@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 import { loadState, saveState, resetState as clearStorageState } from '../utils/storage.js';
-import { scheduleStretchReminders, stopScheduler } from '../utils/notifications.js';
+import { scheduleStretchReminders, stopScheduler, startAlarmRinging, stopAlarmRinging } from '../utils/notifications.js';
 import { getCurrentUser, logoutUser, databases, DATABASE_ID, Query } from '../lib/appwrite.js';
 import { getAdaptiveInterval } from '../services/scheduler.js';
 import { formatTimelineTime } from '../utils/summaryGenerator.js';
@@ -266,7 +266,7 @@ export function updateSettings(settingsData) {
       // Calculate dynamic intervals based on current skips
       const interval = getAdaptiveInterval(updatedSettings.reminderIntervalMinutes, state.progress.consecutiveSkips);
       if (interval > 0) {
-        scheduleStretchReminders(interval);
+        scheduleStretchReminders(interval, () => triggerAlarmRing());
       } else {
         stopScheduler();
       }
@@ -324,22 +324,78 @@ export function updateSmartSchedule(smartScheduleData) {
   });
 }
 
-export function snoozeReminder() {
+export function triggerAlarmRing(title = 'Time to stretch! 🧘', body = 'Your body needs a quick posture refresh. Stand up & reset your energy!') {
   appStore.update((state) => {
-    const snoozeDuration = state.settings?.smartSchedule?.snoozeDuration || 15;
-    const snoozeTimeMs = snoozeDuration * 60 * 1000;
-    
-    setTimeout(() => {
-      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-        new Notification("StretchNow Reminder", {
-          body: "Time for your post-snooze stretch break! 🧘",
-          icon: "/icon-192.png"
-        });
-      }
-    }, snoozeTimeMs);
-    
-    return state;
+    startAlarmRinging(state.settings?.reminderSound || 'zen');
+    return {
+      ...state,
+      isAlarmRinging: true,
+      activeAlarmInfo: { title, body, timestamp: Date.now() }
+    };
   });
+}
+
+export function stopAlarmRing() {
+  stopAlarmRinging();
+  appStore.update((state) => ({
+    ...state,
+    isAlarmRinging: false,
+    activeAlarmInfo: null
+  }));
+}
+
+let snoozeTimerIntervalId = null;
+
+export function snoozeAlarm(customMinutes) {
+  stopAlarmRing();
+  cancelSnooze();
+
+  appStore.update((state) => {
+    const minutes = customMinutes || state.settings?.smartSchedule?.snoozeDuration || 15;
+    let totalSeconds = minutes * 60;
+
+    snoozeTimerIntervalId = setInterval(() => {
+      totalSeconds -= 1;
+      appStore.update((s) => ({
+        ...s,
+        snoozeRemainingSeconds: Math.max(0, totalSeconds)
+      }));
+
+      if (totalSeconds <= 0) {
+        cancelSnooze();
+        triggerAlarmRing("Snooze Alarm Ended 🧘", "Time for your post-snooze stretch break!");
+      }
+    }, 1000);
+
+    return {
+      ...state,
+      isAlarmRinging: false,
+      activeAlarmInfo: null,
+      snoozeRemainingSeconds: totalSeconds
+    };
+  });
+}
+
+export function cancelSnooze() {
+  if (snoozeTimerIntervalId) {
+    clearInterval(snoozeTimerIntervalId);
+    snoozeTimerIntervalId = null;
+  }
+  appStore.update((state) => ({
+    ...state,
+    snoozeRemainingSeconds: 0
+  }));
+}
+
+export function closeAdaptiveModal() {
+  appStore.update((state) => ({
+    ...state,
+    showAdaptiveModal: false
+  }));
+}
+
+export function snoozeReminder() {
+  snoozeAlarm();
 }
 
 export function toggleMeetingMode() {
@@ -404,6 +460,7 @@ export function skipBreakAction() {
     
     const nextState = {
       ...state,
+      showAdaptiveModal: nextSkips >= 3,
       progress: {
         ...state.progress,
         consecutiveSkips: nextSkips,

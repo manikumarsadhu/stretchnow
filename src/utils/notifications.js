@@ -26,11 +26,13 @@ function getAudioContext() {
 }
 
 // ── Alert Sound Profiles ──
-export function playAlertSound(type = 'zen') {
+export function playAlertSound(type = 'zen', volumeMultiplier = 1.0) {
   try {
     const audioCtx = getAudioContext();
     if (!audioCtx) return;
     const now = audioCtx.currentTime;
+    const settings = getAlertSettings();
+    const baseVolume = (settings.alarmVolume ?? 0.8) * volumeMultiplier;
 
     if (type === 'crystal') {
       // High crisp 3-note triad: C6 (1046.5Hz), E6 (1318.5Hz), G6 (1567.98Hz)
@@ -42,7 +44,7 @@ export function playAlertSound(type = 'zen') {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(freq, now + idx * 0.08);
         gain.gain.setValueAtTime(0.001, now + idx * 0.08);
-        gain.gain.linearRampToValueAtTime(0.2, now + idx * 0.08 + 0.03);
+        gain.gain.linearRampToValueAtTime(0.2 * baseVolume, now + idx * 0.08 + 0.03);
         gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.45);
         osc.start(now + idx * 0.08);
         osc.stop(now + idx * 0.08 + 0.5);
@@ -238,6 +240,48 @@ const ROTATING_MESSAGES = [
 ];
 let messageIndex = 0;
 
+let alarmSoundIntervalId = null;
+let autoStopTimeoutId = null;
+
+export function startAlarmRinging(soundType = 'zen') {
+  stopAlarmRinging();
+  let ringCount = 0;
+  playAlertSound(soundType, 0.2); // Start 0s at 20% volume
+  
+  alarmSoundIntervalId = setInterval(() => {
+    ringCount++;
+    // Ramp volume over 10s (4 intervals * 2.5s) from 20% to 100%
+    const volumeRamp = Math.min(1.0, 0.2 + (ringCount * 0.2));
+    playAlertSound(soundType, volumeRamp);
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate([400, 200, 400]);
+    }
+  }, 2500);
+
+  // Smart Auto Stop after 30s of unattended ringing
+  autoStopTimeoutId = setTimeout(() => {
+    stopAlarmRinging();
+  }, 30000);
+
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    navigator.vibrate([400, 200, 400]);
+  }
+}
+
+export function stopAlarmRinging() {
+  if (alarmSoundIntervalId) {
+    clearInterval(alarmSoundIntervalId);
+    alarmSoundIntervalId = null;
+  }
+  if (autoStopTimeoutId) {
+    clearTimeout(autoStopTimeoutId);
+    autoStopTimeoutId = null;
+  }
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    navigator.vibrate(0);
+  }
+}
+
 export function sendStretchNotification(title, body) {
   if (!('Notification' in window)) return;
   
@@ -285,15 +329,17 @@ export function sendStretchNotification(title, body) {
       new Notification(displayTitle, {
         body: displayBody,
         icon: '/icon-192.png',
-        silent: isSilent
+        badge: '/icon-192.png',
+        silent: isSilent,
+        requireInteraction: true, // Holds on screen-off / mobile lock screen
+        tag: 'stretchnow-alarm',
+        renotify: true
       });
       
       if (mode === 'tone' && settings.soundEnabled !== false) {
-        playAlertSound(settings.reminderSound || 'zen');
-      }
-      
-      if (mode === 'vibrate' && 'vibrate' in navigator) {
-        navigator.vibrate([200, 100, 200]);
+        startAlarmRinging(settings.reminderSound || 'zen');
+      } else if (mode === 'vibrate' && 'vibrate' in navigator) {
+        navigator.vibrate([500, 250, 500, 250, 500]);
       }
     } catch (e) {
       console.warn('Could not launch Notification:', e);

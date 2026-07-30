@@ -4,39 +4,63 @@
 
 ![StretchNow Banner](./public/screenshots/stretchnow_banner.png)
 
-StretchNow is a responsive, installable Progressive Web App (PWA) serving as a physical wellness companion. Designed for software engineers, designers, and office workers, it triggers non-intrusive timed break alerts, guides you through equipment-free office stretches with custom visual animations, and tracks your daily water intake and sedentary trends.
+StretchNow is a responsive, installable Progressive Web App (PWA) serving as a physical wellness companion. Designed for software engineers, designers, and office workers, it triggers non-intrusive timed break alerts, guides you through equipment-free office stretches with custom visual canvas animations, tracks daily water intake & sedentary trends, and seamlessly synchronizes your wellness stats to the cloud.
 
 ---
 
 ## ✨ Features Overview
 
-### 1. ⚙️ Smart Work Schedule & Custom Reminders
-* Set your active work hours (e.g., `09:00 - 17:00`) and break frequency.
-* **Meeting Mode (DND)**: A simple toggle in settings to silence all reminders during calls.
-* **Lunch Break Pause**: Automatically skips reminders during your set lunch window.
-* **Weekend Mode**: Toggle stretch reminders on Saturdays/Sundays off or on.
-* **Rotated Alerts**: Keeps notifications fresh with a library of rotating prompts (e.g., *"Your spine needs you 😊"*, *"Screen fatigue? 👀"*).
+### 1. ⚙️ Smart Work Schedule & Adaptive Reminders
+* **Active Work Hours**: Set your start/end workday bounds (e.g., `09:00 - 17:00`) and reminder intervals.
+* **Adaptive Interval Scheduling**: Automatically adjusts future break frequencies based on your snooze and completion patterns.
+* **Meeting Mode (DND)**: Quick toggle in settings to silence all notifications during calls or deep focus work.
+* **Lunch Break Pause & Weekend Mode**: Automatically pauses reminders during specified lunch windows or non-working weekend days.
+* **Rotated Alerts**: Features fresh, rotating motivational prompts (e.g., *"Your spine needs you 😊"*, *"Screen fatigue? 👀"*).
 
 ### 2. ⚡ Gamification & Motivation
-* **Level & XP Bar**: Earn **+50 XP** for each completed break. Check your leveling progress directly on the dashboard.
-* **Daily Streak Counter**: Tracks consecutive days of posture health.
-* **Weekly Challenges**: Complete checklists like *Stretch Master Weekly* (15 breaks/week) or *Hydration Regular* (5 water goals/week).
-* **Achievement Badges**: Unlock medals (e.g., *7-Day Streak*, *Posture Starter*, *Early Bird*, *Hydration Hero*) dynamically based on your habits.
+* **Level & XP Progress**: Earn **+50 XP** for each completed stretching break. Track your level progression live on the dashboard.
+* **Daily Streak Counter**: Keeps track of consecutive active days maintaining posture health.
+* **Weekly Challenges**: Complete structured milestones like *Stretch Master Weekly* (15 breaks/week) or *Hydration Regular* (5 water goals/week).
+* **Achievement Badges**: Unlock dynamic trophies (*7-Day Streak*, *Posture Starter*, *Early Bird*, *Hydration Hero*) based on your activity.
 
-### 3. ⏱️ Interactive Guided Stretch Poses
-* **2-Minute Breaks**: 3 targeted poses (40 seconds each) designed to release desk tension.
-* **Audio Cues**: Plays gentle chimes on step transitions and timer completion.
-* **Ambient Relaxation Loops**: Select from client-side synthesized soundscapes (Ocean waves, Raindrops, Whistling wind, White noise) playing directly inside your active break.
+### 3. ⏱️ Interactive Guided Stretch Poses & Canvas Animations
+* **2-Minute Desk Breaks**: 3 targeted equipment-free poses (40 seconds each) designed to release desk-bound neck, shoulder, and back tension.
+* **Custom Procedural Animations**: Interactive canvas component (`StretchAnimation.svelte`) guiding movement posture.
+* **Audio Cues & Synthesized Soundscapes**: Gentle chimes for pose transitions and synthesized relaxation soundscapes (Ocean waves, Raindrops, Whistling wind, White noise) playing directly during breaks.
 
-### 4. 🎨 Themes & Custom Accessibility
-* **Color Themes**: Toggle between **Light**, **Dark**, **System Default**, **Ocean Blue**, and **Forest Green**.
-* **Large Text Mode**: Scale app typography up by 12% globally for easier screen reading.
-* **High Contrast Mode**: Increases element outlines and color contrast thresholds to comply with WCAG guidelines.
+### 4. ☁️ Appwrite Cloud Sync & Offline-First Engine
+* **Cloud Sync**: Securely sync your streaks, XP, custom preferences, and break history using Appwrite authentication and database services.
+* **Offline-First Queue**: Action queue records changes while offline and automatically flushes them when network connection resumes.
+* **Conflict Resolution Wizard**: Interactive merge wizard (`MergeWizardModal.svelte`) resolves conflicts between local and remote state.
+* **Live Sync Status**: Persistent status pill (`SyncStatus.svelte`) indicating real-time connection and sync health.
 
-### 5. 📊 Wellness Analytics
-* Real-time **Wellness Score** star ratings computed daily from your breaks, water intake, streaks, and sitting limits.
-* Visual bar and line charts logging daily breaks, weekly posture goals, water consumption, and total sedentary hours.
-* **Export PDF**: Click "Export PDF" in the Analytics page to invoke a print-styled layout optimized for physical paper or digital saving.
+### 5. 🤖 AI Posture & Ergonomics Coach
+* **AI Insights**: Integrated AI service (`aiCoach.js`) powered by Hugging Face APIs providing personalized ergonomic tips, posture adjustments, and break advice based on your sedentary trends.
+
+### 6. 🌍 Multilingual Support (i18n)
+* **Localization**: Full internationalization engine supporting **English**, **Hindi (हिंदी)**, and **Telugu (తెలుగు)**.
+
+### 7. 🎨 Themes & Custom Accessibility
+* **Color Schemes**: Seamlessly switch between **Light**, **Dark**, **System Default**, **Ocean Blue**, and **Forest Green** themes.
+* **Large Text Mode**: Scales typography up by 12% for enhanced readability.
+* **High Contrast Mode**: Boosts element contrast ratios and borders to comply with WCAG accessibility guidelines.
+
+### 8. 📊 Wellness Analytics & PDF Export
+* **Wellness Score**: Star rating calculated daily based on break completion, water intake, streaks, and sitting thresholds.
+* **Visual Charts**: Interactive trend visualizations (`Chart.svelte`) for break counts, posture goals, water intake, and sedentary hours.
+* **Export PDF**: Print-optimized stylesheet for saving or printing weekly wellness reports.
+
+---
+
+## 🛠️ Tech Stack
+
+* **Frontend Framework**: [Svelte 5](https://svelte.dev/)
+* **Build Tool & Bundler**: [Vite 8](https://vitejs.dev/)
+* **PWA Engine**: `vite-plugin-pwa` with ServiceWorker caching
+* **Styling & System**: [Pico CSS](https://picocss.com/) + Custom CSS Variables & Animations
+* **Backend & Cloud Sync**: [Appwrite Web SDK](https://appwrite.io/)
+* **Visualization**: [Chart.js](https://www.chartjs.org/)
+* **Type Safety & Diagnostics**: JavaScript with JSDoc annotations, TypeScript type definitions (`checkJs: true`), and `svelte-check`
 
 ---
 
@@ -44,64 +68,86 @@ StretchNow is a responsive, installable Progressive Web App (PWA) serving as a p
 
 ```
 stretchnow/
-├── public/                # Static assets (PWA Icons, SVG Favicon)
-│   └── screenshots/       # Application banner screenshots
+├── public/                    # Static assets (PWA icons, manifest, banner graphics)
+│   └── screenshots/           # Application screenshots
 │
 ├── src/
-│   ├── components/        # Reusable Svelte UI Components
-│   │   ├── InlineTutorial.svelte      # Onboarding guide checklist
-│   │   ├── WellnessSummaryModal.svelte# Daily review report modal
-│   │   ├── BadgesList.svelte          # Badge grid layout
-│   │   ├── ProgressRing.svelte        # Circular timers SVG
-│   │   └── ...
+│   ├── components/            # Reusable Svelte UI Components
+│   │   ├── AdaptiveIntervalModal.svelte # Dynamic break schedule adjustment modal
+│   │   ├── AlarmModal.svelte            # Triggered break reminder dialog
+│   │   ├── AuthModal.svelte             # Appwrite login/register modal
+│   │   ├── BadgesList.svelte            # Achievement badge display grid
+│   │   ├── MergeWizardModal.svelte      # Cloud/local sync conflict resolution
+│   │   ├── SnoozeBanner.svelte          # Active snooze banner indicator
+│   │   ├── StretchAnimation.svelte      # Canvas-rendered stretch pose guide
+│   │   ├── SyncStatus.svelte            # Real-time online/sync status badge
+│   │   └── WellnessSummaryModal.svelte  # End-of-day wellness report
 │   │
-│   ├── routes/            # Main application screen views
-│   │   ├── Home.svelte        # Main dashboard and timeline feed
-│   │   ├── Settings.svelte    # Backup actions, Diagnostics, and Privacy
-│   │   ├── Library.svelte     # Search, filter, and detail modal
-│   │   └── ...
+│   ├── routes/                # Screen views & pages
+│   │   ├── Break.svelte                 # Active guided stretching routine
+│   │   ├── Home.svelte                  # Main dashboard, stats, & action feed
+│   │   ├── Library.svelte               # Pose library, search, & detail modal
+│   │   ├── Onboarding.svelte            # Setup wizard & goal configuration
+│   │   ├── Settings.svelte              # Preferences, Cloud Sync, & Diagnostics
+│   │   └── Statistics.svelte            # Analytics charts & wellness score logs
 │   │
-│   ├── services/          # Business logic layers
-│   │   ├── backup.js          # Export/Import JSON utilities
-│   │   ├── diagnostics.js     # Permission and system diagnostics
-│   │   ├── scheduler.js       # Skips escalation intervals
-│   │   └── aiCoach.js         # HuggingFace prompt calling API
+│   ├── services/              # Business logic & external API layers
+│   │   ├── aiCoach.js                   # Hugging Face AI posture coach service
+│   │   ├── backup.js                    # Local JSON export/import handlers
+│   │   ├── diagnostics.js               # System permissions & PWA status checks
+│   │   └── scheduler.js                 # Reminder timer calculations
 │   │
-│   ├── validators/        # Schema validators
-│   │   └── backupValidator.js # JSON file structure integrity
+│   ├── sync/                  # Cloud synchronization engine
+│   │   ├── manager.js                   # Appwrite sync coordinator
+│   │   ├── merge.js                     # State merging algorithm
+│   │   ├── queue.js                     # Offline action queue persistence
+│   │   └── status.js                    # Sync state store
 │   │
-│   ├── utils/             # Helper utilities
-│   │   ├── wellnessScore.js   # Score indexes formulas
-│   │   ├── storage.js         # Local Storage persistence
-│   │   └── sounds.js          # Web Audio nature synth
+│   ├── stores/                # Reactive state management
+│   │   └── app.js                       # Core application state & LocalStorage sync
 │   │
-│   ├── App.svelte         # Primary shell routing
-│   └── main.js            # Entry index setup
+│   ├── utils/                 # Utilities & helper modules
+│   │   ├── i18n.js                      # Internationalization translator
+│   │   ├── notifications.js             # Web Notifications API dispatcher
+│   │   ├── sounds.js                    # Synthesized audio soundscapes
+│   │   ├── storage.js                   # LocalStorage wrapper
+│   │   └── wellnessScore.js             # Daily wellness rating algorithms
+│   │
+│   ├── locales/               # Dictionary files for i18n (en, hi, te)
+│   ├── global.d.ts            # Global TypeScript definitions & extensions
+│   ├── App.svelte             # Root shell & navigation layout
+│   └── main.js                # Application entry point
+│
+├── jsconfig.json              # Compiler & type checking configuration
+├── svelte.config.js           # Svelte preprocessor configuration
+└── vite.config.js             # Vite bundler & PWA configuration
 ```
 
 ---
 
 ## ⌨️ Active Break Keyboard Shortcuts
 
-During an active stretching timer, you can control the screen completely hands-free:
+During an active stretching session, you can navigate hands-free:
 
 | Key | Action |
 | :--- | :--- |
-| **`Space`** | Toggle Play / Pause Timer (stops/resumes background audio loops simultaneously) |
-| **`S`** | Skip current stretch step and advance to the next pose |
-| **`R`** | Reset active break timer back to the first step |
-| **`Escape`** | Quit and return to the main dashboard |
+| **`Space`** | Play / Pause active timer (toggles ambient background audio simultaneously) |
+| **`S`** | Skip current stretch pose and advance to the next step |
+| **`R`** | Restart active break timer from the beginning |
+| **`Escape`** | Exit active break and return to main dashboard |
 
 ---
 
 ## 🛠️ Local Development & Installation
 
-### Requirements
-* [Node.js](https://nodejs.org/) (Version 18+)
-* npm (bundled with Node)
+### Prerequisites
+* [Node.js](https://nodejs.org/) (v18 or higher)
+* npm (comes bundled with Node.js)
 
-### 1. Install Dependencies
+### 1. Clone & Install Dependencies
 ```bash
+git clone https://github.com/your-username/stretchnow.git
+cd stretchnow
 npm install
 ```
 
@@ -111,31 +157,48 @@ npm run dev
 ```
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-### 3. Production Build & PWA Generation
+### 3. Type Checking & Diagnostics
+```bash
+npx svelte-check
+```
+
+### 4. Build for Production
 ```bash
 npm run build
 ```
-Vite will compile the production bundle to `/dist`, registering the PWA service worker cache manifests.
+The compiled output will be generated in the `/dist` directory, complete with PWA service worker manifests.
 
 ---
 
 ## 🚀 Release Milestones & Roadmap
 
-* **Version 1.0 (Current)**: Adaptive break scheduling, detailed stretch metadata, inline tutorial checkpoints, local backup/restore downloads, system diagnostics indicators, and full offline PWA setups.
-* **Version 1.1**: Expanded stretch routines library, customized relaxation sounds volumes, and additional color themes.
-* **Version 2.0**: Cloud synchronization (Appwrite account sync), hardware/health platforms integrations (Google Health, Apple Health), and automated suppressions during calendar meetings.
+* **Version 1.0 (Current)**: 
+  * Adaptive break scheduling & smart notification triggers.
+  * Gamified XP system, streak counter, and dynamic achievement badges.
+  * Interactive canvas stretch guides with audio & ambient soundscapes.
+  * Cloud synchronization via Appwrite with offline queueing & state merge wizard.
+  * Multilingual support (English, Hindi, Telugu).
+  * AI-assisted ergonomic recommendations.
+  * Wellness Analytics with PDF export capabilities.
+* **Version 1.1 (Upcoming)**:
+  * Expanded library of stretches (desk yoga, eye relaxation exercises).
+  * Custom audio soundscape volume mixer.
+  * Health platform integrations (Google Fit, Apple Health).
 
 ---
 
-## 📖 Architecture & Portfolio Blueprint
-For a detailed review of the state design diagrams, database layout schemas, and design constraints, view the [PORTFOLIO_ENGINEERING.md](file:///e:/mani-entrepreneur/stretchnow/PORTFOLIO_ENGINEERING.md) file.
+## 📖 Architecture & Engineering Blueprint
+
+For an in-depth breakdown of state machines, data schemas, sync conflict resolution, and architectural constraints, refer to [PORTFOLIO_ENGINEERING.md](file:///e:/mani-entrepreneur/stretchnow/PORTFOLIO_ENGINEERING.md).
 
 ---
 
 ## 🤝 Contributing
-Contributions are welcome! Please view the [CONTRIBUTING.md](file:///e:/mani-entrepreneur/stretchnow/CONTRIBUTING.md) guide for details on development loops and Pull Request requirements.
+
+Contributions are welcome! Please review [CONTRIBUTING.md](file:///e:/mani-entrepreneur/stretchnow/CONTRIBUTING.md) for development guidelines and pull request procedures.
 
 ---
 
 ## 📄 License
+
 This project is licensed under the [MIT License](LICENSE).

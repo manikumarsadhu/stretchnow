@@ -1,4 +1,6 @@
 import neckVideo from '../media/neck excercise video.mp4';
+import shoulderRollsVideo from '../media/shoulder_rolls.mp4';
+import seatedSpinalVideo from '../media/seated_spinal.mp4';
 
 export const STRETCH_CATEGORIES = [
   { id: 'all', label: 'All Routines', icon: 'apps' },
@@ -46,6 +48,9 @@ export const STRETCHES = [
     title: 'Shoulder Blade Rolls',
     category: 'neck',
     duration: 30,
+    appwriteStorageFileId: '6a6b290f000b5e85b843',
+    videoUrl: shoulderRollsVideo,
+    hasVideo: true,
     difficulty: 'Easy',
     target: 'Trapezius & Rhomboids',
     icon: 'hdr_auto',
@@ -73,6 +78,9 @@ export const STRETCHES = [
     title: 'Seated Spinal Twist',
     category: 'back',
     duration: 45,
+    appwriteStorageFileId: '6a6b2d900008c793435b',
+    videoUrl: seatedSpinalVideo,
+    hasVideo: true,
     difficulty: 'Easy',
     target: 'Thoracic & Lumbar Spine',
     icon: 'autorenew',

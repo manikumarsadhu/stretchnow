@@ -1,8 +1,12 @@
 <script>
   import neckVideo from '../media/neck excercise video.mp4';
+  import shoulderRollsVideo from '../media/shoulder_rolls.mp4';
+  import seatedSpinalVideo from '../media/seated_spinal.mp4';
   import { getAppwriteStorageVideoUrl } from '../lib/appwrite.js';
 
   export let id = '';
+  export let poseName = '';
+  export let duration = 3;
   export let videoUrl = '';
   export let posterOnly = false;
   export let active = true;
@@ -12,12 +16,16 @@
 
   /** @type {Record<string, string>} */
   const CLOUD_STORAGE_FILES = {
-    'neck-tilt': '6a6af236001a9cd9ec67'
+    'neck-tilt': '6a6af236001a9cd9ec67',
+    'shoulder-rolls': '6a6b290f000b5e85b843',
+    'seated-twist': '6a6b2d900008c793435b'
   };
 
   /** @type {Record<string, string>} */
   const VIDEO_MAP = {
-    'neck-tilt': neckVideo
+    'neck-tilt': neckVideo,
+    'shoulder-rolls': shoulderRollsVideo,
+    'seated-twist': seatedSpinalVideo
   };
 
   /** @type {Record<string, string>} */
@@ -42,22 +50,28 @@
     'box-breathing': '🫁 4s Inhale • Hold • Exhale'
   };
 
+  let videoElement = null;
+
   $: cloudVideoUrl = CLOUD_STORAGE_FILES[id] ? getAppwriteStorageVideoUrl(CLOUD_STORAGE_FILES[id]) : null;
   $: videoSrc = videoUrl || VIDEO_MAP[id] || cloudVideoUrl;
   $: posterSrc = POSTER_MAP[id] || `/images/stretches/${id}.png`;
   $: motionLabel = MOTION_LABELS[id] || '✨ Follow Stretch Motion';
+
+  $: if (videoElement && videoSrc) {
+    videoElement.play().catch(() => {});
+  }
 </script>
 
 <div class="poster-container {posterOnly ? 'poster-only' : ''} {animateMotion ? 'animated-mode' : ''}">
   <div class="poster-wrapper">
     {#if videoSrc && !posterOnly}
       <video
+        bind:this={videoElement}
         src={videoSrc}
         autoplay
         loop
         muted
         playsinline
-        controls
         poster={posterSrc}
         class="stretch-video stretch-{id}"
       >

@@ -2,44 +2,77 @@
   --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-heading: 'Outfit', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   
+  /* --- DESIGN TOKENS: Surfaces & Backgrounds --- */
   --bg-gradient: linear-gradient(135deg, #f0f4ff 0%, #f8fafc 50%, #f5f3ff 100%);
   --bg-app: #f8fafc;
-  --bg-card: rgba(255, 255, 255, 0.82);
-  --bg-card-hover: rgba(255, 255, 255, 0.95);
-  --border-card: rgba(226, 232, 240, 0.8);
-  
+  --surface-1: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-elevated: rgba(255, 255, 255, 0.88);
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-card-hover: rgba(255, 255, 255, 0.98);
+  --border-card: rgba(226, 232, 240, 0.85);
+  --border-card-hover: rgba(99, 102, 241, 0.25);
+
+  /* --- DESIGN TOKENS: Typography & Text --- */
   --text-main: #334155;
   --text-heading: #0f172a;
   --text-muted: #64748b;
   
+  /* --- DESIGN TOKENS: Color Psychology Palette --- */
   --primary: #6366f1;
   --primary-hover: #4f46e5;
   --primary-light: rgba(99, 102, 241, 0.1);
   --primary-glow: rgba(99, 102, 241, 0.25);
+
+  --color-success: #10b981;       /* Green: Success & Goal Completion */
+  --color-success-light: rgba(16, 185, 129, 0.12);
+  --color-calm: #0284c7;          /* Blue: Calm & Hydration */
+  --color-calm-light: rgba(2, 132, 199, 0.12);
+  --color-reminder: #f59e0b;      /* Orange: Reminders & Active Timers */
+  --color-reminder-light: rgba(245, 158, 11, 0.12);
+  --color-ai: #8b5cf6;            /* Purple: AI Ergonomics Coach */
+  --color-ai-light: rgba(139, 92, 246, 0.12);
+  --color-rose: #f43f5e;          /* Red: Alerts & Missed Breaks */
+  --color-rose-light: rgba(244, 63, 94, 0.12);
+
+  --emerald: var(--color-success);
+  --emerald-light: var(--color-success-light);
+  --amber: var(--color-reminder);
+  --amber-light: var(--color-reminder-light);
+  --rose: var(--color-rose);
+  --rose-light: var(--color-rose-light);
   
-  --emerald: #10b981;
-  --emerald-light: rgba(16, 185, 129, 0.12);
-  --amber: #f59e0b;
-  --amber-light: rgba(245, 158, 11, 0.12);
-  --rose: #f43f5e;
-  --rose-light: rgba(244, 63, 94, 0.12);
-  
+  /* --- DESIGN TOKENS: Shadows & Depth --- */
   --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
   --shadow-md: 0 8px 24px -4px rgba(99, 102, 241, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
   --shadow-lg: 0 16px 36px -6px rgba(99, 102, 241, 0.15), 0 8px 20px -4px rgba(15, 23, 42, 0.08);
-  
-  --radius-sm: 12px;
-  --radius-md: 18px;
-  --radius-lg: 24px;
-  --radius-xl: 32px;
+
+  /* --- DESIGN TOKENS: Border Radii --- */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+
+  /* --- DESIGN TOKENS: Motion System Standardized Timings --- */
+  --anim-card: 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  --anim-progress: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  --anim-xp: 700ms ease-out;
+  --anim-counter: 800ms ease-out;
+  --anim-confetti: 1200ms ease-out;
+  --anim-hero: 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  --anim-nav: 180ms ease-in-out;
 }
 
 .dark-mode {
   --bg-gradient: linear-gradient(135deg, #0b0f19 0%, #0f172a 50%, #131127 100%);
   --bg-app: #0f172a;
-  --bg-card: rgba(30, 41, 59, 0.75);
-  --bg-card-hover: rgba(30, 41, 59, 0.9);
-  --border-card: rgba(51, 65, 85, 0.7);
+  --surface-1: #1e293b;
+  --surface-2: #334155;
+  --surface-elevated: rgba(30, 41, 59, 0.88);
+  --bg-card: rgba(30, 41, 59, 0.78);
+  --bg-card-hover: rgba(30, 41, 59, 0.95);
+  --border-card: rgba(51, 65, 85, 0.75);
+  --border-card-hover: rgba(129, 140, 248, 0.4);
   
   --text-main: #cbd5e1;
   --text-heading: #f8fafc;
@@ -50,16 +83,20 @@
   --primary-light: rgba(129, 140, 248, 0.15);
   --primary-glow: rgba(129, 140, 248, 0.3);
   
-  --emerald: #34d399;
-  --emerald-light: rgba(52, 211, 153, 0.15);
-  --amber: #fbbf24;
-  --amber-light: rgba(251, 191, 36, 0.15);
-  --rose: #fb7185;
-  --rose-light: rgba(251, 113, 133, 0.15);
+  --color-success: #34d399;
+  --color-success-light: rgba(52, 211, 153, 0.15);
+  --color-calm: #38bdf8;
+  --color-calm-light: rgba(56, 189, 248, 0.15);
+  --color-reminder: #fbbf24;
+  --color-reminder-light: rgba(251, 191, 36, 0.15);
+  --color-ai: #a78bfa;
+  --color-ai-light: rgba(167, 139, 250, 0.15);
+  --color-rose: #fb7185;
+  --color-rose-light: rgba(251, 113, 133, 0.15);
   
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 16px 36px -6px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 16px 36px -6px rgba(0, 0, 0, 0.65);
 }
 
 *, *::before, *::after {
@@ -92,7 +129,7 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: center;
 }
 
-/* Subtle animations */
+/* Subtle animations & Standardized Motion Classes */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -108,8 +145,19 @@ h1, h2, h3, h4, h5, h6 {
   50% { box-shadow: 0 0 30px rgba(99, 102, 241, 0.5); }
 }
 
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
 .animate-fade-in {
-  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn var(--anim-card) forwards;
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--border-card) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }
 
 /* Custom scrollbar */
@@ -164,7 +212,37 @@ h1, h2, h3, h4, h5, h6 {
   --bg-gradient: linear-gradient(135deg, #064e3b 0%, #0f172a 50%, #022c22 100%);
 }
 
-/* --- ACCESSIBILITY OVERRIDES --- */
+/* --- ACCESSIBILITY & PREFERS-REDUCED-MOTION --- */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --anim-card: 150ms ease;
+    --anim-progress: 150ms ease;
+    --anim-xp: 150ms ease;
+    --anim-counter: 150ms ease;
+    --anim-confetti: 0ms none;
+    --anim-hero: 150ms ease;
+    --anim-nav: 150ms ease;
+  }
+  
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Reduced Motion Mode Override Class */
+.reduced-motion {
+  --anim-card: 100ms linear !important;
+  --anim-progress: 100ms linear !important;
+  --anim-hero: 100ms linear !important;
+}
+.reduced-motion *, .reduced-motion *::before, .reduced-motion *::after {
+  animation: none !important;
+  transition: opacity 0.1s linear !important;
+}
 
 /* Large Text Mode */
 .large-text {
@@ -204,4 +282,3 @@ h1, h2, h3, h4, h5, h6 {
   --primary-glow: rgba(0, 255, 0, 0.3) !important;
   border-width: 2px !important;
 }
-

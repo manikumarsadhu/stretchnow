@@ -5,8 +5,8 @@
   import Toggle from '../components/Toggle.svelte';
   import Modal from '../components/Modal.svelte';
   import AuthModal from '../components/AuthModal.svelte';
-  import { appStore, updateSettings, resetAppState, navigateTo, logoutAppwriteSession, checkAndSyncAuth, importBackupAction, updateProfile } from '../stores/app.js';
-  import { requestNotificationPermission, playChime, sendStretchNotification, playAlertSound, playCelebrationSound } from '../utils/notifications.js';
+  import { appStore, updateSettings, resetAppState, navigateTo, logoutAppwriteSession, checkAndSyncAuth, importBackupAction, updateProfile, triggerAlarmRing } from '../stores/app.js';
+  import { requestNotificationPermission, sendStretchNotification, playAlertSound, playCelebrationSound } from '../utils/notifications.js';
   import { exportBackup, importBackup } from '../services/backup.js';
   import { runSystemDiagnostics } from '../services/diagnostics.js';
   import { loadLocale } from '../utils/i18n.js';
@@ -71,13 +71,13 @@
 
   let testAlertFeedback = '';
   async function handleTestAlert() {
-    playChime();
+    triggerAlarmRing('StretchNow Mobile Alarm Test 🧘', 'Full-screen mobile alarm modal with Snooze & Stop actions!');
     const granted = await requestNotificationPermission();
     if (granted) {
-      sendStretchNotification('StretchNow Alert Check 🧘', 'Desktop notifications & sound chime are working!');
-      testAlertFeedback = '✅ Sound chime played & test notification sent!';
+      sendStretchNotification('StretchNow Alarm Check 🧘', 'Full-screen mobile alarm modal is ringing!');
+      testAlertFeedback = '✅ Mobile alarm modal ringing & notification sent!';
     } else {
-      testAlertFeedback = '🔊 Sound chime played! (Enable notifications in browser settings for popups)';
+      testAlertFeedback = '🔊 Mobile alarm modal ringing! (Enable browser notifications for lockscreen popups)';
     }
     setTimeout(() => { testAlertFeedback = ''; }, 4000);
   }
@@ -304,6 +304,22 @@
       />
 
       {#if settings.soundEnabled !== false}
+        <!-- Alarm Volume Slider -->
+        <div class="sound-select-group animate-fade-in">
+          <div class="volume-slider-header">
+            <span class="sound-select-lbl">🔊 Alarm Volume</span>
+            <span class="volume-val-badge">{Math.round((settings.alarmVolume ?? 0.8) * 100)}%</span>
+          </div>
+          <input
+            type="range"
+            min="0.1"
+            max="1.0"
+            step="0.05"
+            class="volume-range-slider"
+            value={settings.alarmVolume ?? 0.8}
+            on:input={(e) => updateSettings({ alarmVolume: Number(e.currentTarget.value) })}
+          />
+        </div>
         <!-- Reminder Chime Selector -->
         <div class="sound-select-group animate-fade-in">
           <label class="sound-select-lbl" for="reminder-sound-select">
@@ -388,6 +404,37 @@
       </select>
     </div>
   </Card>
+
+  <!-- Accessibility & Motion -->
+  <Card title="Accessibility & Motion" icon="accessibility" padding="md">
+    <div class="toggles-list">
+      <Toggle
+        checked={settings.reducedMotion || false}
+        label="Reduced Motion"
+        description="Minimizes animations and disables canvas background effects."
+        onchange={(val) => updateSettings({ reducedMotion: val })}
+      />
+      <Toggle
+        checked={settings.celebrationAnimations !== false}
+        label="Celebration Confetti"
+        description="Show procedural confetti bursts on level-up and milestone achievements."
+        onchange={(val) => updateSettings({ celebrationAnimations: val })}
+      />
+      <Toggle
+        checked={settings.hapticFeedback !== false}
+        label="Haptic Feedback"
+        description="Vibrate slightly on mobile touch interactions (where supported)."
+        onchange={(val) => updateSettings({ hapticFeedback: val })}
+      />
+      <Toggle
+        checked={settings.autoPlayAudio || false}
+        label="Auto-Play Stretch Audio"
+        description="Automatically start ambient soundscapes when starting a break."
+        onchange={(val) => updateSettings({ autoPlayAudio: val })}
+      />
+    </div>
+  </Card>
+
 
   <!-- Smart Work Schedule preferences -->
   <Card title="Smart Work Schedule" icon="calendar_month" padding="md">
@@ -782,6 +829,29 @@
     font-size: 0.92rem;
     font-weight: 700;
     color: var(--text-heading);
+  }
+
+  .volume-slider-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 6px;
+  }
+
+  .volume-val-badge {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--primary);
+    background: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 99px;
+  }
+
+  .volume-range-slider {
+    width: 100%;
+    accent-color: var(--primary);
+    cursor: pointer;
   }
 
   .account-sub {
