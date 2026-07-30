@@ -12,5 +12,6 @@ export const syncState = writable('IDLE');
 
 /**
  * Keeps track of the last successful synchronization date/time.
+ * @type {import('svelte/store').Writable<string|null>}
  */
 export const lastSyncTime = writable(null);

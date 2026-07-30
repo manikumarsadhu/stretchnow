@@ -4,6 +4,7 @@
   export let icon = '';
   export let disabled = false;
   export let fullWidth = false;
+  /** @type {'button' | 'submit' | 'reset'} */
   export let type = 'button';
   export let onclick = () => {};
 </script>

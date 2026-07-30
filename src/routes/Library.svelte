@@ -110,8 +110,8 @@
         <button class="card-item" on:click={() => openStretchModal(s)}>
           <Card hover padding="md">
             <div class="item-inner">
-              <div class="item-icon-wrap">
-                <span class="material-symbols-outlined item-icon">{s.icon}</span>
+              <div class="item-poster-wrap">
+                <img src="/images/stretches/{s.id}.png" alt={s.title} class="item-poster-thumb" />
               </div>
               <div class="item-info">
                 <div class="item-top">
@@ -332,20 +332,27 @@
     gap: 14px;
   }
 
-  .item-icon-wrap {
-    width: 46px;
-    height: 46px;
-    background: var(--primary-light);
+  .item-poster-wrap {
+    width: 68px;
+    height: 68px;
     border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    overflow: hidden;
     flex-shrink: 0;
+    border: 1px solid var(--border-card);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    background: #0f172a;
   }
 
-  .item-icon {
-    font-size: 24px;
-    color: var(--primary);
+  .item-poster-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 20%;
+    transition: transform 0.3s ease;
+  }
+
+  .card-item:hover .item-poster-thumb {
+    transform: scale(1.1);
   }
 
   .item-info {

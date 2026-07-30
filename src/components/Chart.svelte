@@ -6,6 +6,7 @@
   export let labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   export let data = [0, 0, 0, 0, 0, 0, 0];
   export let color = '#6366f1';
+  /** @type {import('chart.js').ChartType} */
   export let chartType = 'bar';
   export let unit = '';
 

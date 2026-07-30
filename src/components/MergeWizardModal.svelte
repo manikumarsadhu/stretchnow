@@ -3,7 +3,7 @@
   import Button from './Button.svelte';
 
   export let isOpen = false;
-  export let onresolve = () => {};
+  export let onresolve = (_choice) => {};
   export let onclose = () => {};
 
   let selectedChoice = 'merge'; // 'merge' | 'local' | 'cloud'

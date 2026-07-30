@@ -44,7 +44,7 @@ export function importBackup(file) {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const result = e.target.result;
+        const result = e.target?.result;
         if (typeof result !== 'string') throw new Error('Unexpected file read result type.');
         const parsed = JSON.parse(result);
         validateBackup(parsed);

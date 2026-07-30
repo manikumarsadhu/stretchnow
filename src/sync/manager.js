@@ -65,7 +65,7 @@ export async function processQueue() {
       console.warn(`Sync operation ${op.id} failed:`, err);
       
       // If doc is missing (404), try creating it first
-      if (err?.code === 404) {
+      if (/** @type {any} */(err)?.code === 404) {
         try {
           await databases.createDocument(
             DATABASE_ID,

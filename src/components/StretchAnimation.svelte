@@ -1,420 +1,590 @@
 <script>
   export let id = '';
+  export let posterOnly = false;
+  export let active = true;
+
+  let isZoomed = false;
+  let animateMotion = active;
+
+  /** @type {Record<string, string>} */
+  const POSTER_MAP = {
+    'neck-tilt': '/images/stretches/neck-tilt.png',
+    'shoulder-rolls': '/images/stretches/shoulder-rolls.png',
+    'seated-twist': '/images/stretches/seated-twist.png',
+    'wrist-extension': '/images/stretches/wrist-extension.png',
+    'hip-opener': '/images/stretches/hip-opener.png',
+    'eye-20-20-20': '/images/stretches/eye-20-20-20.png',
+    'box-breathing': '/images/stretches/box-breathing.png'
+  };
+
+  /** Movement labels for easy visual identification */
+  const MOTION_LABELS = {
+    'neck-tilt': '↔️ Tilt Head Side-to-Side',
+    'shoulder-rolls': '🔄 Roll Shoulders Backward',
+    'seated-twist': '🔁 Twist Torso Smoothly',
+    'wrist-extension': '⬆️ Pull Fingers Backward',
+    'hip-opener': '⤵️ Hinge Hips Forward',
+    'eye-20-20-20': '👀 Focus Softly 20ft Away',
+    'box-breathing': '🫁 4s Inhale • Hold • Exhale'
+  };
+
+  $: posterSrc = POSTER_MAP[id] || `/images/stretches/${id}.png`;
+  $: motionLabel = MOTION_LABELS[id] || '✨ Follow Stretch Motion';
 </script>
 
-<div class="animation-container">
-  {#if id === 'neck-tilt'}
-    <!-- Neck Tilt Animation -->
-    <svg viewBox="0 0 160 120" class="stretch-svg" aria-label="Neck tilt stretch guide">
-      <!-- Chair -->
-      <path d="M70,95 L70,75 L95,75 M70,75 L62,55" fill="none" stroke="var(--text-muted)" stroke-width="3" stroke-linecap="round" />
-      
-      <!-- Body (Torso and Legs) -->
-      <path d="M80,95 L80,75 L95,75 L95,95" fill="none" stroke="#475569" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
-      <path d="M80,75 L80,50" fill="none" stroke="var(--primary)" stroke-width="7" stroke-linecap="round" />
-      
-      <!-- Arms resting on thighs -->
-      <path d="M80,55 L90,65 L94,74" fill="none" stroke="var(--primary-glow)" stroke-width="3" stroke-linecap="round" />
+<div class="poster-container {posterOnly ? 'poster-only' : ''} {animateMotion ? 'animated-mode' : ''}">
+  <div class="poster-wrapper">
+    <img
+      src={posterSrc}
+      alt="Real men stretch poster guide for {id}"
+      class="poster-img stretch-{id} {animateMotion ? 'active-motion' : ''}"
+    />
+    
+    <!-- Motion Overlay Animations & Target Hotspots -->
+    {#if id === 'neck-tilt'}
+      <div class="motion-overlay neck-tilt-motion">
+        <div class="motion-arc-line neck-arc"></div>
+        <span class="material-symbols-outlined motion-arrow left">arrow_back</span>
+        <span class="hotspot-node neck-node" title="Target: Neck & Upper Traps"></span>
+        <span class="material-symbols-outlined motion-arrow right">arrow_forward</span>
+      </div>
+    {:else if id === 'shoulder-rolls'}
+      <div class="motion-overlay shoulder-rolls-motion">
+        <div class="roll-ring roll-left"></div>
+        <span class="hotspot-node shoulder-left-node"></span>
+        <span class="hotspot-node shoulder-right-node"></span>
+        <div class="roll-ring roll-right"></div>
+      </div>
+    {:else if id === 'seated-twist'}
+      <div class="motion-overlay twist-motion">
+        <span class="material-symbols-outlined twist-icon">sync</span>
+        <span class="hotspot-node spine-node"></span>
+      </div>
+    {:else if id === 'wrist-extension'}
+      <div class="motion-overlay wrist-motion">
+        <span class="material-symbols-outlined pull-icon">arrow_upward</span>
+        <span class="hotspot-node wrist-node"></span>
+      </div>
+    {:else if id === 'hip-opener'}
+      <div class="motion-overlay hip-motion">
+        <span class="material-symbols-outlined hinge-icon">keyboard_arrow_down</span>
+        <span class="hotspot-node hip-node"></span>
+      </div>
+    {:else if id === 'box-breathing'}
+      <div class="motion-overlay breathing-overlay">
+        <div class="breath-ring outer"></div>
+        <div class="breath-ring inner"></div>
+        <span class="breath-tag">4s Box</span>
+      </div>
+    {:else}
+      <div class="motion-overlay generic-motion">
+        <span class="hotspot-node generic-node"></span>
+      </div>
+    {/if}
 
-      <!-- Neck & Head (Animated) -->
-      <g class="animated-neck-head">
-        <!-- Neck -->
-        <line x1="80" y1="50" x2="80" y2="40" stroke="var(--text-main)" stroke-width="5" stroke-linecap="round" />
-        <!-- Head -->
-        <circle cx="80" cy="30" r="12" fill="#fcd34d" stroke="#d97706" stroke-width="1.5" />
-        <!-- Hair -->
-        <path d="M68,28 C68,18 74,18 80,18 C86,18 92,18 92,28 C92,20 88,18 80,18 C72,18 68,20 68,28 Z" fill="#334155" />
-        <!-- Face Features -->
-        <circle cx="76" cy="30" r="1" fill="#334155" />
-        <circle cx="84" cy="30" r="1" fill="#334155" />
-        <path d="M77,35 Q80,37 83,35" fill="none" stroke="#334155" stroke-width="1" stroke-linecap="round" />
-      </g>
+    <!-- Top Badge with Clear Movement Label -->
+    <div class="poster-badge-bar">
+      <div class="poster-badge">
+        <span class="material-symbols-outlined badge-icon">motion_photos_on</span>
+        <span>{motionLabel}</span>
+      </div>
+    </div>
 
-      <!-- Motion Direction Arrows -->
-      <path d="M55,30 A 25 25 0 0 1 105,30" fill="none" stroke="var(--emerald)" stroke-width="2" stroke-dasharray="3,3" />
-      <path d="M55,30 L59,34 M55,30 L59,26" fill="none" stroke="var(--emerald)" stroke-width="2" stroke-linecap="round" />
-      <path d="M105,30 L101,34 M105,30 L101,26" fill="none" stroke="var(--emerald)" stroke-width="2" stroke-linecap="round" />
-    </svg>
+    <!-- Action Controls (Play/Pause Motion & Fullscreen Zoom) -->
+    <div class="poster-controls">
+      <button
+        class="ctrl-btn {animateMotion ? 'active' : ''}"
+        on:click={() => animateMotion = !animateMotion}
+        aria-label="Toggle motion animation"
+        title={animateMotion ? "Pause movement animation" : "Play movement animation"}
+      >
+        <span class="material-symbols-outlined">{animateMotion ? 'pause_circle' : 'play_circle'}</span>
+      </button>
 
-  {:else if id === 'shoulder-rolls'}
-    <!-- Shoulder Rolls Animation -->
-    <svg viewBox="0 0 160 120" class="stretch-svg" aria-label="Shoulder rolls guide">
-      <!-- Chair Backrest -->
-      <path d="M55,95 L55,60" fill="none" stroke="var(--text-muted)" stroke-width="3" />
-
-      <!-- Torso (Facing front) -->
-      <path d="M60,95 L65,65 C68,58 72,55 80,55 C88,55 92,58 95,65 L100,95" fill="none" stroke="var(--primary)" stroke-width="8" stroke-linecap="round" />
-      <!-- Head -->
-      <circle cx="80" cy="40" r="11" fill="#fcd34d" stroke="#d97706" stroke-width="1.5" />
-      <path d="M69,38 C69,28 75,28 80,28 C85,28 91,28 91,38 C91,30 87,28 80,28 C73,28 69,30 69,38 Z" fill="#334155" />
-      <circle cx="76" cy="40" r="1" fill="#334155" />
-      <circle cx="84" cy="40" r="1" fill="#334155" />
-      <path d="M78,45 Q80,47 82,45" fill="none" stroke="#334155" stroke-width="1" stroke-linecap="round" />
-
-      <!-- Left Shoulder Joint (Animated) -->
-      <g class="animated-shoulder-joint-l">
-        <circle cx="64" cy="62" r="5.5" fill="var(--emerald)" />
-        <circle cx="64" cy="62" r="2" fill="#ffffff" />
-        <path d="M64,62 L60,82 L70,82" fill="none" stroke="var(--primary-glow)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-      </g>
-
-      <!-- Right Shoulder Joint (Animated) -->
-      <g class="animated-shoulder-joint-r">
-        <circle cx="96" cy="62" r="5.5" fill="var(--emerald)" />
-        <circle cx="96" cy="62" r="2" fill="#ffffff" />
-        <path d="M96,62 L100,82 L90,82" fill="none" stroke="var(--primary-glow)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-      </g>
-
-      <!-- Roll Indicator Loops -->
-      <path d="M64,72 A 8 8 0 1 1 64,52 A 8 8 0 1 1 64,72" fill="none" stroke="var(--emerald)" stroke-width="1.5" stroke-dasharray="2,2" />
-      <path d="M96,72 A 8 8 0 1 1 96,52 A 8 8 0 1 1 96,72" fill="none" stroke="var(--emerald)" stroke-width="1.5" stroke-dasharray="2,2" />
-    </svg>
-
-  {:else if id === 'seated-twist'}
-    <!-- Seated Twist Animation -->
-    <svg viewBox="0 0 160 120" class="stretch-svg" aria-label="Seated twist guide">
-      <!-- Chair Base & Backrest -->
-      <path d="M50,95 L110,95 M80,95 L80,72 M65,72 L95,72 M65,72 L65,45" fill="none" stroke="var(--text-muted)" stroke-width="3.5" stroke-linecap="round" />
-
-      <!-- Twisting Body (Animated Torso Scale/Skew) -->
-      <g class="animated-torso-twist">
-        <!-- Legs sitting -->
-        <path d="M72,72 L86,72 L90,95" fill="none" stroke="#475569" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
-        <!-- Torso -->
-        <line x1="75" y1="72" x2="75" y2="44" stroke="var(--primary)" stroke-width="7.5" stroke-linecap="round" />
-        <!-- Arms (Wrapping chair and knees) -->
-        <path d="M75,48 C60,48 58,58 58,64" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" />
-        <path d="M75,48 C90,48 94,58 94,70" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" />
-        <!-- Head -->
-        <circle cx="75" cy="28" r="10" fill="#fcd34d" stroke="#d97706" stroke-width="1.5" />
-        <path d="M65,26 C65,18 70,16 75,16 C80,16 85,18 85,26 C85,20 81,18 75,18 C69,18 65,20 65,26 Z" fill="#334155" />
-      </g>
-
-      <!-- Rotation Direction Indicators -->
-      <path d="M48,34 Q38,26 48,18 M102,34 Q112,26 102,18" fill="none" stroke="var(--emerald)" stroke-width="2.5" stroke-linecap="round" />
-      <polygon points="48,18 43,23 51,22" fill="var(--emerald)" />
-      <polygon points="102,18 107,23 99,22" fill="var(--emerald)" />
-    </svg>
-
-  {:else if id === 'wrist-extension'}
-    <!-- Wrist & Forearm Extension Animation -->
-    <svg viewBox="0 0 160 120" class="stretch-svg" aria-label="Wrist extension guide">
-      <!-- Extending Arm (Left side) -->
-      <g class="extended-arm">
-        <!-- Shoulder & Arm -->
-        <path d="M25,50 C35,50 45,50 65,50" fill="none" stroke="var(--primary)" stroke-width="7" stroke-linecap="round" />
-        <!-- Sleeve cuffs -->
-        <line x1="60" y1="46" x2="60" y2="54" stroke="var(--primary-hover)" stroke-width="2" />
-        
-        <!-- Extended Hand (Animated flexion) -->
-        <g class="animated-stretching-hand">
-          <!-- Wrist joint / Palm -->
-          <path d="M65,50 L75,46 L86,41 C89,39 92,39 94,36 L102,33 C104,32 105,35 104,37 L98,42 L103,43 C105,44 105,47 103,48 L97,50 L101,52 C103,53 103,56 101,57 L93,59 L83,61 Z" fill="#fcd34d" stroke="#d97706" stroke-width="1.5" stroke-linejoin="round" />
-        </g>
-      </g>
-
-      <!-- Assisting Hand (Applies pull pressure, static) -->
-      <g class="assisting-hand">
-        <!-- Arm coming down -->
-        <path d="M102,15 L95,33" fill="none" stroke="var(--primary-glow)" stroke-width="6" stroke-linecap="round" />
-        <!-- Hand fingers holding the extended fingertips -->
-        <path d="M95,33 C92,34 89,38 90,44" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" />
-      </g>
-
-      <!-- Force Arrow Indicator -->
-      <path d="M88,20 L80,26 M80,26 L85,27 M80,26 L81,21" fill="none" stroke="var(--emerald)" stroke-width="2" stroke-linecap="round" />
-    </svg>
-
-  {:else if id === 'hip-opener'}
-    <!-- Seated Figure-4 Hip Opener -->
-    <svg viewBox="0 0 160 120" class="stretch-svg" aria-label="Hip opener guide">
-      <!-- Chair Base & Backrest -->
-      <path d="M45,95 L95,95 M65,95 L65,70 M50,70 L80,70 M50,70 L50,45" fill="none" stroke="var(--text-muted)" stroke-width="3.5" stroke-linecap="round" />
-
-      <!-- Lower Body Sitting Leg & Crossed Leg -->
-      <!-- Crossed leg in a figure-4 (Right ankle on Left knee) -->
-      <path d="M60,70 L72,70 L72,95 M72,70 L86,70 L86,95" fill="none" stroke="#475569" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
-      <path d="M62,70 L78,56 L55,56 L55,70" fill="none" stroke="var(--emerald)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
-
-      <!-- Seated Torso Hinging Forward (Animated) -->
-      <g class="animated-torso-hinge">
-        <!-- Spine -->
-        <line x1="60" y1="70" x2="52" y2="40" stroke="var(--primary)" stroke-width="7" stroke-linecap="round" />
-        <!-- Head -->
-        <circle cx="48" cy="24" r="10" fill="#fcd34d" stroke="#d97706" stroke-width="1.5" />
-        <path d="M38,22 C38,14 43,12 48,12 C53,12 58,14 58,22 C58,16 54,14 48,14 C42,14 38,16 38,22 Z" fill="#334155" />
-      </g>
-
-      <!-- Hinge Direction Arrow -->
-      <path d="M72,25 Q58,26 56,33" fill="none" stroke="var(--emerald)" stroke-width="2" stroke-linecap="round" />
-      <polygon points="56,33 54,28 60,30" fill="var(--emerald)" />
-    </svg>
-
-  {:else if id === 'eye-20-20-20'}
-    <!-- 20-20-20 Eye Rest Guide -->
-    <svg viewBox="0 0 160 120" class="stretch-svg" aria-label="Eye strain relief guide">
-      <!-- Human Face Close-up with Eyes -->
-      <!-- Left Eye -->
-      <g class="animated-eye-close">
-        <path d="M20,60 Q40,35 60,60 Q40,85 20,60 Z" fill="var(--primary-light)" stroke="var(--primary)" stroke-width="3" />
-        <!-- Pupil -->
-        <circle cx="40" cy="60" r="9" fill="#1e293b" />
-        <circle cx="40" cy="60" r="5" fill="var(--emerald)" />
-        <circle cx="37" cy="57" r="2" fill="#ffffff" />
-      </g>
-
-      <!-- Right Eye -->
-      <g class="animated-eye-close">
-        <path d="M70,60 Q90,35 110,60 Q90,85 70,60 Z" fill="var(--primary-light)" stroke="var(--primary)" stroke-width="3" />
-        <!-- Pupil -->
-        <circle cx="90" cy="60" r="9" fill="#1e293b" />
-        <circle cx="90" cy="60" r="5" fill="var(--emerald)" />
-        <circle cx="87" cy="57" r="2" fill="#ffffff" />
-      </g>
-
-      <!-- Target Object (Distant tree/mountain icon on the right) -->
-      <g class="distant-target">
-        <polygon points="140,55 132,75 148,75" fill="var(--emerald)" />
-        <polygon points="140,43 135,60 145,60" fill="var(--emerald)" />
-        <line x1="140" y1="75" x2="140" y2="82" stroke="#d97706" stroke-width="2.5" />
-      </g>
-
-      <!-- Visual focal waves toward the tree -->
-      <g class="focal-rays">
-        <path d="M102,60 L128,60 M102,55 L128,58 M102,65 L128,62" fill="none" stroke="var(--emerald)" stroke-width="1.5" stroke-dasharray="3,3" />
-      </g>
-    </svg>
-
-  {:else if id === 'box-breathing'}
-    <!-- Box Breathing Lungs Animation -->
-    <svg viewBox="0 0 160 120" class="stretch-svg" aria-label="Box breathing lungs guide">
-      <!-- Human chest outline -->
-      <path d="M40,95 C45,72 55,60 80,60 C105,60 115,72 120,95" fill="none" stroke="var(--text-muted)" stroke-width="2.5" />
-      <!-- Airway -->
-      <path d="M80,25 L80,45" fill="none" stroke="var(--text-muted)" stroke-width="3" stroke-linecap="round" />
-
-      <!-- Animated Lungs (Expanding and Contracting) -->
-      <g class="animated-breathing-lungs">
-        <!-- Left Lung -->
-        <path d="M78,42 C72,36 58,38 56,52 C54,66 62,80 77,82 C78,82 79,78 79,70 Z" fill="var(--primary-light)" stroke="var(--primary)" stroke-width="4" stroke-linejoin="round" />
-        <!-- Right Lung -->
-        <path d="M82,42 C88,36 102,38 104,52 C106,66 98,80 83,82 C82,82 81,78 81,70 Z" fill="var(--primary-light)" stroke="var(--primary)" stroke-width="4" stroke-linejoin="round" />
-      </g>
-
-      <!-- Dynamic Breathing Phase Guide Overlay -->
-      <g class="breathing-guide-box">
-        <!-- Frame -->
-        <rect x="5" y="5" width="150" height="110" rx="14" fill="none" stroke="var(--border-card)" stroke-width="2.5" />
-        <!-- Moving tracer dot -->
-        <circle cx="5" cy="5" r="5" fill="var(--emerald)" class="tracer-dot" />
-        
-        <!-- Breathing Text Indicators in corners -->
-        <g class="breathing-labels">
-          <text x="80" y="103" text-anchor="middle" class="breath-text inhale">INHALE (4S)</text>
-          <text x="80" y="103" text-anchor="middle" class="breath-text hold-1">HOLD (4S)</text>
-          <text x="80" y="103" text-anchor="middle" class="breath-text exhale">EXHALE (4S)</text>
-          <text x="80" y="103" text-anchor="middle" class="breath-text hold-2">HOLD (4S)</text>
-        </g>
-      </g>
-    </svg>
-  {/if}
+      <button
+        class="ctrl-btn"
+        on:click={() => isZoomed = !isZoomed}
+        aria-label="Toggle full poster preview"
+        title="View full poster"
+      >
+        <span class="material-symbols-outlined">{isZoomed ? 'close' : 'fullscreen'}</span>
+      </button>
+    </div>
+  </div>
 </div>
 
+{#if isZoomed}
+  <div
+    class="full-poster-modal animate-fade-in"
+    on:click={() => isZoomed = false}
+    on:keydown={(e) => e.key === 'Escape' && (isZoomed = false)}
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
+    aria-label="Full resolution poster preview"
+  >
+    <div
+      class="full-poster-card"
+      on:click|stopPropagation={() => {}}
+      on:keydown|stopPropagation={() => {}}
+      role="presentation"
+    >
+      <img src={posterSrc} alt="Full resolution real men stretch poster" class="full-poster-img" />
+      <button class="modal-close-btn" on:click={() => isZoomed = false} aria-label="Close poster view">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+      <div class="modal-poster-caption">
+        <span class="material-symbols-outlined">verified</span>
+        <span>Real Men Stretch Poster • {motionLabel}</span>
+      </div>
+    </div>
+  </div>
+{/if}
+
 <style>
-  .animation-container {
+  .poster-container {
     width: 100%;
-    height: 180px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(226, 232, 240, 0.25) 100%);
+    height: 220px;
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
     border-radius: var(--radius-md, 18px);
-    border: 1px solid var(--border-card);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  }
+
+  .poster-container.poster-only {
+    height: 100%;
+    min-height: 180px;
+  }
+
+  .poster-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    padding: 10px;
-    box-sizing: border-box;
-    position: relative;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.02);
   }
 
-  :global(.dark-mode) .animation-container {
-    background: linear-gradient(180deg, rgba(30, 41, 59, 0.3) 0%, rgba(15, 23, 42, 0.4) 100%);
-    border-color: rgba(255, 255, 255, 0.05);
-  }
-
-  .stretch-svg {
+  /* Core Poster Image Styling & Hover */
+  .poster-img {
+    width: 100%;
     height: 100%;
-    max-width: 100%;
-    overflow: visible;
+    object-fit: cover;
+    object-position: center 20%;
+    transition: transform 0.4s ease, filter 0.4s ease;
+    will-change: transform;
   }
 
-  /* 1. Neck Tilt Animation */
-  .animated-neck-head {
-    transform-origin: 80px 50px;
-    animation: neckTiltLoop 6s ease-in-out infinite;
+  .poster-container:hover .poster-img {
+    filter: brightness(1.08);
   }
 
-  @keyframes neckTiltLoop {
-    0%, 100% { transform: rotate(0deg); }
-    25% { transform: rotate(20deg); }
-    50% { transform: rotate(0deg); }
-    75% { transform: rotate(-20deg); }
+  /* ----------------------------------------------------
+     PHYSICAL EXERCISE POSTER ANIMATIONS
+     Direct movements applied to the poster image
+  ----------------------------------------------------- */
+
+  /* Neck Tilt: Realistic Side-to-Side Head Tilting */
+  .poster-img.stretch-neck-tilt.active-motion {
+    animation: posterNeckTilt 4s ease-in-out infinite alternate;
+  }
+  @keyframes posterNeckTilt {
+    0% { transform: rotate(-5deg) translateX(-8px) scale(1.02); }
+    50% { transform: rotate(0deg) translateX(0px) scale(1); }
+    100% { transform: rotate(5deg) translateX(8px) scale(1.02); }
   }
 
-  /* 2. Shoulder Roll Animations */
-  .animated-shoulder-joint-l {
-    transform-origin: 64px 62px;
-    animation: shoulderCircularL 3.5s linear infinite;
+  /* Shoulder Rolls: Smooth Circular Shoulder Movement */
+  .poster-img.stretch-shoulder-rolls.active-motion {
+    animation: posterShoulderRoll 3.5s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+  }
+  @keyframes posterShoulderRoll {
+    0% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(5px, -7px) scale(1.03); }
+    50% { transform: translate(0, -9px) scale(1.04); }
+    75% { transform: translate(-5px, -3px) scale(1.02); }
+    100% { transform: translate(0, 0) scale(1); }
   }
 
-  .animated-shoulder-joint-r {
-    transform-origin: 96px 62px;
-    animation: shoulderCircularR 3.5s linear infinite;
+  /* Seated Twist: Torso Rotation Perspective Sway */
+  .poster-img.stretch-seated-twist.active-motion {
+    animation: posterSeatedTwist 4.5s ease-in-out infinite alternate;
+  }
+  @keyframes posterSeatedTwist {
+    0% { transform: perspective(600px) rotateY(-8deg) scale(1.03); }
+    100% { transform: perspective(600px) rotateY(8deg) scale(1.03); }
   }
 
-  @keyframes shoulderCircularL {
-    0% { transform: translate(0, 0); }
-    25% { transform: translate(-3px, -5px); }
-    50% { transform: translate(0, 0); }
-    75% { transform: translate(3px, 5px); }
-    100% { transform: translate(0, 0); }
+  /* Wrist Extension: Flex and Extend Backward Pulling */
+  .poster-img.stretch-wrist-extension.active-motion {
+    animation: posterWristFlex 3s ease-in-out infinite alternate;
+  }
+  @keyframes posterWristFlex {
+    0% { transform: translateY(4px) rotate(2deg) scale(1); }
+    100% { transform: translateY(-6px) rotate(-3deg) scale(1.04); }
   }
 
-  @keyframes shoulderCircularR {
-    0% { transform: translate(0, 0); }
-    25% { transform: translate(3px, -5px); }
-    50% { transform: translate(0, 0); }
-    75% { transform: translate(-3px, 5px); }
-    100% { transform: translate(0, 0); }
+  /* Hip Opener: Forward Hinge Bounce Motion */
+  .poster-img.stretch-hip-opener.active-motion {
+    transform-origin: bottom center;
+    animation: posterHipHinge 4s ease-in-out infinite alternate;
+  }
+  @keyframes posterHipHinge {
+    0% { transform: perspective(600px) rotateX(10deg) translateY(6px) scale(1.03); }
+    100% { transform: perspective(600px) rotateX(0deg) translateY(-2px) scale(1); }
   }
 
-  /* 3. Seated Spinal Twist Animation */
-  .animated-torso-twist {
-    transform-origin: 75px 72px;
-    animation: spinalTwistLoop 6s ease-in-out infinite;
+  /* Eye Strain Relief: Soft Lens Zoom Focus */
+  .poster-img.stretch-eye-20-20-20.active-motion {
+    animation: posterEyeFocus 4.5s ease-in-out infinite alternate;
+  }
+  @keyframes posterEyeFocus {
+    0% { transform: scale(1); filter: brightness(100%); }
+    100% { transform: scale(1.06); filter: brightness(112%) contrast(108%); }
   }
 
-  @keyframes spinalTwistLoop {
-    0%, 100% { transform: scaleX(1); }
-    25% { transform: scaleX(0.72) skewY(4deg); }
-    50% { transform: scaleX(1); }
-    75% { transform: scaleX(0.72) skewY(-4deg); }
+  /* Box Breathing: Rhythmic Expansion & Contraction */
+  .poster-img.stretch-box-breathing.active-motion {
+    animation: posterBreathe 6s ease-in-out infinite alternate;
+  }
+  @keyframes posterBreathe {
+    0% { transform: scale(0.97); }
+    50% { transform: scale(1.07); }
+    100% { transform: scale(0.97); }
   }
 
-  /* 4. Wrist Extension Animation */
-  .animated-stretching-hand {
-    transform-origin: 65px 50px;
-    animation: wristExtendLoop 4s ease-in-out infinite;
+  /* ----------------------------------------------------
+     MOTION OVERLAYS & TARGET MUSCLE HOTSPOTS
+  ----------------------------------------------------- */
+
+  .motion-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  @keyframes wristExtendLoop {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(-26deg); }
+  /* Muscle Target Hotspot Node */
+  .hotspot-node {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #10b981;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 16px #10b981, 0 0 0 4px rgba(16, 185, 129, 0.4);
+    animation: hotspotPulse 2s ease-in-out infinite alternate;
+    z-index: 2;
   }
 
-  /* 5. Figure-4 Hip Opener Hinge */
-  .animated-torso-hinge {
-    transform-origin: 60px 70px;
-    animation: hipHingeLoop 5s ease-in-out infinite;
+  @keyframes hotspotPulse {
+    0% { transform: scale(0.85); box-shadow: 0 0 8px #10b981, 0 0 0 2px rgba(16, 185, 129, 0.3); }
+    100% { transform: scale(1.3); box-shadow: 0 0 22px #10b981, 0 0 0 8px rgba(16, 185, 129, 0); }
   }
 
-  @keyframes hipHingeLoop {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(20deg); }
+  .neck-node { top: 32%; left: 50%; transform: translateX(-50%); }
+  .shoulder-left-node { top: 36%; left: 35%; }
+  .shoulder-right-node { top: 36%; right: 35%; }
+  .spine-node { top: 48%; left: 50%; transform: translate(-50%, -50%); }
+  .wrist-node { top: 52%; left: 44%; }
+  .hip-node { top: 58%; left: 50%; transform: translateX(-50%); }
+  .generic-node { top: 45%; left: 50%; transform: translateX(-50%); }
+
+  /* Neck Tilt Overlay */
+  .neck-tilt-motion {
+    gap: 64px;
+  }
+  .motion-arc-line {
+    position: absolute;
+    width: 140px;
+    height: 50px;
+    border: 2px dashed rgba(16, 185, 129, 0.8);
+    border-color: transparent transparent rgba(16, 185, 129, 0.9) transparent;
+    border-radius: 50%;
+    top: 24%;
+    animation: arcWave 3s ease-in-out infinite alternate;
+  }
+  @keyframes arcWave {
+    0% { transform: rotate(-6deg); }
+    100% { transform: rotate(6deg); }
+  }
+  .motion-arrow {
+    font-size: 26px;
+    color: #ffffff;
+    background: rgba(16, 185, 129, 0.6);
+    backdrop-filter: blur(4px);
+    border-radius: 50%;
+    padding: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    animation: sidePulse 2s ease-in-out infinite alternate;
+  }
+  .motion-arrow.left { animation-delay: 0s; }
+  .motion-arrow.right { animation-delay: 1s; }
+
+  /* Shoulder Rolls Overlay */
+  .shoulder-rolls-motion {
+    gap: 84px;
+  }
+  .roll-ring {
+    width: 40px;
+    height: 40px;
+    border: 2px dashed rgba(16, 185, 129, 0.9);
+    border-radius: 50%;
+    animation: spinRing 3s linear infinite;
   }
 
-  /* 6. Eye Strain Blinking / Rays */
-  .animated-eye-close {
-    transform-origin: 50% 50%;
-    animation: eyeBlinkLoop 4s ease-in-out infinite;
+  /* Twist Overlay */
+  .twist-icon {
+    font-size: 44px;
+    color: #ffffff;
+    background: rgba(99, 102, 241, 0.55);
+    backdrop-filter: blur(6px);
+    border-radius: 50%;
+    padding: 10px;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+    animation: twistSpin 4.5s ease-in-out infinite;
   }
 
-  .focal-rays path {
-    animation: radarWaves 2s ease-in-out infinite;
+  /* Wrist Overlay */
+  .pull-icon {
+    font-size: 34px;
+    color: #ffffff;
+    background: rgba(16, 185, 129, 0.55);
+    backdrop-filter: blur(4px);
+    border-radius: 50%;
+    padding: 8px;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+    animation: pullUp 2.5s ease-in-out infinite;
   }
 
-  @keyframes eyeBlinkLoop {
-    0%, 90%, 100% { transform: scaleY(1); }
-    95% { transform: scaleY(0.12); }
+  /* Hip Opener Overlay */
+  .hinge-icon {
+    font-size: 38px;
+    color: #ffffff;
+    background: rgba(245, 158, 11, 0.55);
+    backdrop-filter: blur(4px);
+    border-radius: 50%;
+    padding: 6px;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+    animation: bounceDown 2s ease-in-out infinite;
   }
 
-  @keyframes radarWaves {
-    0% { opacity: 0.1; stroke-dashoffset: 0; }
-    50% { opacity: 1; }
-    100% { opacity: 0.1; stroke-dashoffset: -10; }
+  /* Breathing Overlay */
+  .breathing-overlay {
+    position: absolute;
+    inset: 0;
   }
-
-  /* 7. Lungs Breathing / Tracer Dot */
-  .animated-breathing-lungs {
-    transform-origin: 80px 60px;
-    animation: lungsBreathLoop 8s ease-in-out infinite;
+  .breath-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid rgba(16, 185, 129, 0.8);
   }
-
-  .tracer-dot {
-    animation: traceBoxGuide 8s linear infinite;
+  .breath-ring.outer {
+    width: 90px;
+    height: 90px;
+    animation: breathPulseOuter 6s ease-in-out infinite;
   }
-
-  .breath-text {
-    font-size: 0.65rem;
+  .breath-ring.inner {
+    width: 50px;
+    height: 50px;
+    animation: breathPulseInner 6s ease-in-out infinite;
+  }
+  .breath-tag {
+    position: absolute;
+    bottom: 25px;
+    background: rgba(16, 185, 129, 0.85);
+    color: #ffffff;
     font-weight: 800;
-    letter-spacing: 0.08em;
-    opacity: 0;
+    font-size: 0.75rem;
+    padding: 3px 9px;
+    border-radius: 99px;
+    letter-spacing: 0.04em;
   }
 
-  .breath-text.inhale {
-    fill: var(--primary);
-    animation: textInhale 8s steps(1) infinite;
+  /* ----------------------------------------------------
+     BADGES & TOP CONTROLS
+  ----------------------------------------------------- */
+
+  .poster-badge-bar {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 3;
   }
 
-  .breath-text.hold-1 {
-    fill: var(--emerald);
-    animation: textHold1 8s steps(1) infinite;
+  .poster-badge {
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 99px;
+    padding: 5px 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
-  .breath-text.exhale {
-    fill: var(--rose);
-    animation: textExhale 8s steps(1) infinite;
+  .badge-icon {
+    font-size: 15px;
+    color: var(--emerald, #10b981);
+    animation: pulseBadge 1.8s ease-in-out infinite alternate;
   }
 
-  .breath-text.hold-2 {
-    fill: var(--amber);
-    animation: textHold2 8s steps(1) infinite;
+  @keyframes pulseBadge {
+    from { opacity: 0.7; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1.1); }
   }
 
-  @keyframes lungsBreathLoop {
-    0%, 100%, 75% { transform: scale(0.85); }
-    25%, 50% { transform: scale(1.15); }
+  .poster-controls {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 3;
   }
 
-  @keyframes traceBoxGuide {
-    /* Top: 0-25%, Right: 25-50%, Bottom: 50-75%, Left: 75-100% */
-    0% { cx: 5px; cy: 5px; }
-    25% { cx: 155px; cy: 5px; }
-    50% { cx: 155px; cy: 115px; }
-    75% { cx: 5px; cy: 115px; }
-    100% { cx: 5px; cy: 5px; }
+  .ctrl-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
   }
 
-  @keyframes textInhale {
-    0%, 24.9% { opacity: 1; }
-    25%, 100% { opacity: 0; }
+  .ctrl-btn:hover {
+    background: rgba(99, 102, 241, 0.9);
+    transform: scale(1.08);
   }
 
-  @keyframes textHold1 {
-    0%, 24.9% { opacity: 0; }
-    25%, 49.9% { opacity: 1; }
-    50%, 100% { opacity: 0; }
+  .ctrl-btn.active {
+    border-color: #10b981;
+    color: #10b981;
   }
 
-  @keyframes textExhale {
-    0%, 49.9% { opacity: 0; }
-    50%, 74.9% { opacity: 1; }
-    75%, 100% { opacity: 0; }
+  .ctrl-btn .material-symbols-outlined {
+    font-size: 20px;
   }
 
-  @keyframes textHold2 {
-    0%, 74.9% { opacity: 0; }
-    75%, 99.9% { opacity: 1; }
-    100% { opacity: 0; }
+  /* Modal Fullscreen Preview */
+  .full-poster-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(14px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+
+  .full-poster-card {
+    position: relative;
+    max-width: 540px;
+    width: 100%;
+    max-height: 88vh;
+    background: #0f172a;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .full-poster-img {
+    width: 100%;
+    max-height: 75vh;
+    object-fit: cover;
+    display: block;
+  }
+
+  .modal-close-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .modal-poster-caption {
+    padding: 16px 20px;
+    background: #1e293b;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.92rem;
+    font-weight: 700;
+  }
+
+  .modal-poster-caption .material-symbols-outlined {
+    color: var(--emerald, #10b981);
+  }
+
+  /* Keyframe Animations */
+  @keyframes sidePulse {
+    0% { transform: translateX(-5px) scale(0.95); opacity: 0.7; }
+    100% { transform: translateX(5px) scale(1.1); opacity: 1; }
+  }
+
+  @keyframes spinRing {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes twistSpin {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(180deg) scale(1.15); }
+  }
+
+  @keyframes pullUp {
+    0%, 100% { transform: translateY(4px); }
+    50% { transform: translateY(-7px); }
+  }
+
+  @keyframes bounceDown {
+    0%, 100% { transform: translateY(-5px); }
+    50% { transform: translateY(7px); }
+  }
+
+  @keyframes breathPulseOuter {
+    0%, 100% { transform: scale(0.7); opacity: 0.3; }
+    50% { transform: scale(1.35); opacity: 0.95; }
+  }
+
+  @keyframes breathPulseInner {
+    0%, 100% { transform: scale(1.2); opacity: 0.9; }
+    50% { transform: scale(0.6); opacity: 0.4; }
   }
 </style>

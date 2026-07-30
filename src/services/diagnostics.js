@@ -32,8 +32,8 @@ export async function runSystemDiagnostics() {
     if (navigator.storage && navigator.storage.estimate) {
       try {
         const estimate = await navigator.storage.estimate();
-        const usageMb = (estimate.usage / (1024 * 1024)).toFixed(2);
-        const quotaMb = (estimate.quota / (1024 * 1024)).toFixed(2);
+        const usageMb = (((estimate.usage || 0)) / (1024 * 1024)).toFixed(2);
+        const quotaMb = (((estimate.quota || 0)) / (1024 * 1024)).toFixed(2);
         diagnostics.storageQuota = `${usageMb} MB of ${quotaMb} MB used`;
       } catch {
         diagnostics.storageQuota = 'available';
@@ -46,10 +46,10 @@ export async function runSystemDiagnostics() {
     diagnostics.offlineMode = navigator.onLine ? 'online' : 'offline';
 
     // 5. Audio Synthesizer compatibility
-    diagnostics.audioSupport = !!(window.AudioContext || window.webkitAudioContext);
+    diagnostics.audioSupport = !!(window.AudioContext || /** @type {any} */(window).webkitAudioContext);
 
     // 6. PWA install stand-alone check
-    diagnostics.pwaInstalled = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    diagnostics.pwaInstalled = window.matchMedia('(display-mode: standalone)').matches || /** @type {any} */(window.navigator).standalone === true;
 
     // 7. General browser compatibility
     diagnostics.browserCompatible = 'localStorage' in window && 'fetch' in window;

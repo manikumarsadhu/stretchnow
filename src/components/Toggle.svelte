@@ -2,7 +2,7 @@
   export let checked = false;
   export let label = '';
   export let description = '';
-  export let onchange = () => {};
+  export let onchange = (_val) => {};
 
   function handleToggle(e) {
     checked = e.target.checked;

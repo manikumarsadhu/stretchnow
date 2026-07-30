@@ -35,8 +35,8 @@ export async function registerWithEmail(email, password, name) {
 export async function loginWithEmail(email, password) {
   if (typeof account.createEmailPasswordSession === 'function') {
     return await account.createEmailPasswordSession(email, password);
-  } else if (typeof account.createEmailSession === 'function') {
-    return await account.createEmailSession(email, password);
+  } else if (typeof /** @type {any} */(account).createEmailSession === 'function') {
+    return await /** @type {any} */(account).createEmailSession(email, password);
   }
   throw new Error("Email login method unavailable in current SDK");
 }
@@ -54,7 +54,7 @@ export async function loginAnonymous() {
 export function loginWithOAuth(provider = 'google') {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173';
   return account.createOAuth2Session(
-    provider,
+    /** @type {any} */(provider),
     `${origin}/?auth=success`,
     `${origin}/?auth=failure`
   );
@@ -90,7 +90,7 @@ async function syncCollectionDocument(collectionId, docId, data) {
   try {
     return await databases.updateDocument(DATABASE_ID, collectionId, docId, data);
   } catch (err) {
-    if (err?.code === 404) {
+    if (/** @type {any} */(err)?.code === 404) {
       try {
         return await databases.createDocument(DATABASE_ID, collectionId, docId, data);
       } catch (createErr) {

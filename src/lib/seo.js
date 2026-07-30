@@ -1,5 +1,6 @@
 /**
  * Route-specific SEO metadata dictionary
+ * @type {Record<string, {title: string, description: string}>}
  */
 export const ROUTE_METADATA = {
   splash: {

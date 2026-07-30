@@ -15,7 +15,7 @@ function getAlertSettings() {
 
 export function playChime() {
   try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const AudioContext = window.AudioContext || /** @type {any} */(window).webkitAudioContext;
     if (!AudioContext) return;
     
     const audioCtx = new AudioContext();
