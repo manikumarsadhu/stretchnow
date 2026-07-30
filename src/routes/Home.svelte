@@ -2,8 +2,6 @@
   import { onMount, onDestroy } from 'svelte';
   import Card from '../components/Card.svelte';
   import Button from '../components/Button.svelte';
-  import ProgressCard from '../components/ProgressCard.svelte';
-  import ProgressRing from '../components/ProgressRing.svelte';
   import BadgesList from '../components/BadgesList.svelte';
   import InlineTutorial from '../components/InlineTutorial.svelte';
   import WellnessSummaryModal from '../components/WellnessSummaryModal.svelte';
@@ -26,6 +24,18 @@
   $: xpNeeded  = level * 200;
   $: xpPercent = Math.min(100, Math.round((xp / xpNeeded) * 100));
 
+  // XP pulse micro-animation on increase
+  let xpPulsing = false;
+  let prevXp = 0;
+  function handleXpChange(currentXp) {
+    if (prevXp > 0 && currentXp > prevXp) {
+      xpPulsing = true;
+      setTimeout(() => { xpPulsing = false; }, 900);
+    }
+    prevXp = currentXp;
+  }
+  $: handleXpChange(xp);
+
   // Weekly Challenges
   $: dailyBreaks           = statistics.dailyBreaks || [];
   $: totalBreaksThisWeek   = dailyBreaks.reduce((a, b) => a + b, 0);
@@ -45,7 +55,7 @@
   $: breakGoal        = user.dailyBreakGoal || 6;
   $: waterGoal        = user.dailyWaterGoal || 8;
   let todayIndex = (new Date().getDay() + 6) % 7;
-  $: todaySittingHours = statistics.sittingHours ? statistics.sittingHours[todayIndex] : 7.5;
+  $: todaySittingHours = statistics.sittingHours ? statistics.sittingHours[todayIndex] : 4.5;
   $: checkBreak    = (progress.completedBreaksToday || 0) >= breakGoal;
   $: checkWater    = (progress.water || 0) >= waterGoal;
   $: checkDuration = ((progress.completedBreaksToday || 0) * 2) >= 12;
@@ -55,12 +65,12 @@
 
   // ── Rotating Wellness Tips ──
   const TIPS = [
-    { emoji: '💧', text: 'Time for a glass of water.' },
-    { emoji: '👀', text: 'Try the 20-20-20 rule: look 20ft away for 20s.' },
-    { emoji: '🧘', text: 'Small breaks significantly reduce muscle tension.' },
-    { emoji: '🚶', text: 'Stand up and stretch for two minutes.' },
-    { emoji: '🔥', text: 'Consistency beats intensity. Every break counts.' },
-    { emoji: '💤', text: 'Micro-rest prevents cumulative strain.' },
+    { emoji: '💡', text: 'Your spine needs you! Keep your habits ant feselver habits strong today.' },
+    { emoji: '💧', text: 'Hydration check: Grab a glass of fresh water to boost focus.' },
+    { emoji: '👀', text: 'Screen fatigue? Try the 20-20-20 rule: look 20ft away for 20s.' },
+    { emoji: '🧘', text: 'Small breaks significantly reduce muscle tension and desk fatigue.' },
+    { emoji: '🚶', text: 'Stand up, roll your shoulders, and stretch for two minutes.' },
+    { emoji: '🔥', text: 'Consistency beats intensity. Every micro-break counts!' },
   ];
   let tipIndex = 0;
   let tipVisible = true;
@@ -71,10 +81,9 @@
     setTimeout(() => {
       tipIndex = (tipIndex + 1) % TIPS.length;
       tipVisible = true;
-    }, 300);
+    }, 250);
   }
 
-  // ── Next Break Timer ──
   function calcNextBreak(start, end, interval) {
     if (!start || !end || !interval) return null;
     const now = new Date();
@@ -83,13 +92,17 @@
     const [eh, em] = end.split(':').map(Number);
     const startMin = sh * 60 + sm;
     const endMin   = eh * 60 + em;
-    if (nowMin >= endMin || nowMin < startMin) return null;
+    if (nowMin >= endMin || nowMin < startMin) return { time: '05:00 PM', inMin: 24 };
 
     let nextMin = startMin + interval;
-    while (nextMin <= nowMin) nextMin += interval;
-    if (nextMin >= endMin) return null;
+    while (nextMin < nowMin) nextMin += interval;
+    if (nextMin >= endMin) return { time: '05:00 PM', inMin: 24 };
 
     const diffMin = nextMin - nowMin;
+    if (diffMin <= 0) {
+      return { time: 'Now', inMin: 0 };
+    }
+
     const h = Math.floor(nextMin / 60) % 24;
     const m = nextMin % 60;
     const ampm = h >= 12 ? 'PM' : 'AM';
@@ -100,15 +113,18 @@
     };
   }
 
-  let nextBreak = null;
+  $: isBreakDue = nextBreak && nextBreak.inMin <= 0;
+
+  let nextBreak = { time: '05:00 PM', inMin: 24 };
   let nextBreakInterval = null;
 
   function refreshNextBreak() {
-    nextBreak = calcNextBreak(
-      user.workStart,
-      user.workEnd,
+    const calc = calcNextBreak(
+      user.workStart || '09:00',
+      user.workEnd || '17:00',
       settings.reminderIntervalMinutes || 45
     );
+    if (calc) nextBreak = calc;
   }
 
   // ── Celebration Toast ──
@@ -123,7 +139,7 @@
     celebrationTimeout = setTimeout(() => { celebrationVisible = false; }, 2500);
   }
 
-  // Detect milestone changes — initialize with safe defaults (never read from reactive `progress` at module init)
+  // Detect milestone changes
   let prevBreaksToday = 0;
   let prevWater       = 0;
   let prevLevel       = 1;
@@ -171,16 +187,12 @@
 
   function triggerUndo() { undoAction(); showUndoSnackbar = false; }
 
-  // Stars for wellness score
-  function getStars(score) {
-    const n = Math.round(score / 20);
-    return '★'.repeat(n) + '☆'.repeat(5 - n);
-  }
-  $: starRating = getStars(wellnessScore);
+  // Formatted star rating score
+  $: formattedScore = Math.min(5.0, Math.max(1.0, (wellnessScore / 20))).toFixed(1);
 
   onMount(() => {
-    // Rotating tips every 6s
-    tipInterval = setInterval(rotateTip, 6000);
+    // Rotating tips every 7s
+    tipInterval = setInterval(rotateTip, 7000);
 
     // Next break refresh every minute
     refreshNextBreak();
@@ -206,7 +218,6 @@
     if (celebrationTimeout) clearTimeout(celebrationTimeout);
   });
 
-  // Segmented dots helper — replaces ASCII blocks
   function makeDots(completed, goal) {
     return Array.from({ length: goal }, (_, i) => i < completed);
   }
@@ -221,40 +232,32 @@
     </div>
   {/if}
 
-  <!-- ── Header ── -->
-  <header class="header">
+  <!-- ── 1. HEADER ROW ── -->
+  <header class="top-header">
     <div class="user-greeting">
-      <h1 class="greeting-text">Hello, {user.name || 'Friend'} 👋</h1>
-      <div class="status-pill">
-        <span class="pulse-dot"></span>
-        <span>Posture Active · {user.occupation || 'Desk Worker'}</span>
-      </div>
+      <h1 class="greeting-text">Welcome back, {user.name || 'Alex'} 👋</h1>
     </div>
-    <div class="header-actions">
-      <button
-        class="icon-btn {focusMode ? 'active' : ''}"
-        on:click={() => focusMode = !focusMode}
-        aria-label={focusMode ? 'Exit Focus Mode' : 'Enter Focus Mode'}
-      >
-        <span class="material-symbols-outlined">{focusMode ? 'visibility_off' : 'center_focus_strong'}</span>
-      </button>
-      <button class="icon-btn" on:click={() => navigateTo('settings')} aria-label="Settings">
-        <span class="material-symbols-outlined">settings</span>
-      </button>
-    </div>
+    <button 
+      class="alerts-pill {settings.meetingMode ? 'muted' : 'active'}"
+      on:click={() => navigateTo('settings')}
+      aria-label="Alerts Status. Click to manage settings."
+    >
+      <span class="material-symbols-outlined pill-bell">
+        {settings.meetingMode ? 'notifications_off' : 'notifications'}
+      </span>
+      <span>{settings.meetingMode ? 'Alerts Paused' : 'Alerts Active'}</span>
+    </button>
   </header>
 
   {#if focusMode}
     <!-- ── Focus Mode ── -->
     <div class="focus-mode-container animate-fade-in">
       <div class="focus-timer-card">
-        <ProgressRing progress={breakPercent} size={180} strokeWidth={14} color="var(--primary)">
-          <div class="focus-ring-content">
-            <span class="material-symbols-outlined focus-timer-icon">self_improvement</span>
-            <span class="focus-timer-label">Active Focus</span>
-            <span class="focus-timer-sub">{progress.completedBreaksToday || 0} Breaks</span>
-          </div>
-        </ProgressRing>
+        <div class="focus-ring-content">
+          <span class="material-symbols-outlined focus-timer-icon">self_improvement</span>
+          <span class="focus-timer-label">Active Focus</span>
+          <span class="focus-timer-sub">{progress.completedBreaksToday || 0} Breaks Completed ({breakPercent}% Goal)</span>
+        </div>
       </div>
       <div class="focus-actions">
         <Button variant="primary" size="lg" icon="play_arrow" onclick={() => navigateTo('break')}>
@@ -262,195 +265,192 @@
         </Button>
         <button class="focus-water-btn" on:click={incrementWater} aria-label="Log a cup of water">
           <span class="material-symbols-outlined">water_drop</span>
-          <span>Log Cup ({progress.water || 0} logged)</span>
+          <span>Log Glass ({progress.water || 0} logged)</span>
         </button>
         <button class="exit-focus-btn" on:click={() => focusMode = false}>Exit Focus Mode</button>
       </div>
     </div>
 
   {:else}
-    <!-- ── ROTATING WELLNESS TIP ── -->
-    <div class="tip-carousel {tipVisible ? 'tip-visible' : 'tip-hidden'}">
-      <div class="tip-emoji">{TIPS[tipIndex].emoji}</div>
-      <p class="tip-text">{TIPS[tipIndex].text}</p>
-      <div class="tip-dots">
-        {#each TIPS as _, i}
-          <span class="tip-dot {i === tipIndex ? 'active' : ''}"></span>
-        {/each}
+
+    <!-- ── 2. GAMIFICATION CARD ── -->
+    <div class="gamification-card {xpPulsing ? 'pulse-gami' : ''}">
+      <div class="gami-top-row">
+        <h2 class="gami-card-title">Gamification Card</h2>
+        <div class="gami-badges">
+          <span class="lvl-badge">Lvl {level}</span>
+          <span class="streak-badge">
+            <span class="fire-icon">🔥</span> {progress.streak || 5} Day Streak
+          </span>
+        </div>
+      </div>
+      <div class="xp-container">
+        <div class="xp-label">
+          <span>XP: {xp} / {xpNeeded}</span>
+        </div>
+        <div class="xp-track">
+          <div class="xp-fill {xpPulsing ? 'pulse-fill' : ''}" style="width:{xpPercent}%"></div>
+        </div>
       </div>
     </div>
 
-    <!-- ── XP / Level Bar ── -->
-    <div class="xp-bar-container">
-      <div class="xp-header">
-        <div class="level-badge">Lv. {level}</div>
-        <span class="xp-text">{xp} / {xpNeeded} XP</span>
+    <!-- ── 3. HERO CARD ── -->
+    <div class="hero-card {isBreakDue ? 'due-glow' : ''}">
+      <div class="hero-card-header">
+        <span class="hero-tag">{isBreakDue ? '⏰ Break Time Ready!' : 'Hero Card'}</span>
       </div>
-      <div class="xp-track">
-        <div class="xp-fill" style="width:{xpPercent}%"></div>
+      <div class="hero-card-body">
+        <span class="next-break-lbl">{isBreakDue ? 'Time for a Stretch! 🧘' : 'Next Break in'}</span>
+        <div class="next-break-digits {isBreakDue ? 'due-pulse-text' : ''}">
+          {isBreakDue ? 'Break Due!' : `${nextBreak ? nextBreak.inMin : 24} min`}
+        </div>
+        <p class="hero-motivational-text {tipVisible ? 'tip-in' : 'tip-out'}">
+          {isBreakDue ? 'Your posture needs a quick reset! Tap below to start your 2-min stretch session.' : TIPS[tipIndex].text}
+        </p>
+        <button class="hero-action-btn {isBreakDue ? 'pulse-cta' : ''}" on:click={() => navigateTo('break')} aria-label="Start 2-Min Break Now">
+          <span class="btn-avatar">
+            <span class="material-symbols-outlined">directions_run</span>
+          </span>
+          <span>Start 2-Min Break Now</span>
+        </button>
       </div>
     </div>
 
-    <!-- ── HERO: Start Break CTA ── -->
-    <Card hover padding="lg">
-      <div class="hero-break">
-        <div class="break-ring">
-          <ProgressRing progress={breakPercent} size={100} strokeWidth={9} color="var(--primary)">
-            <span class="material-symbols-outlined hero-ring-icon">self_improvement</span>
-          </ProgressRing>
+    <!-- ── 4. DAILY WELLNESS STATS (2x2 GRID) ── -->
+    <div class="wellness-stats-section">
+      <h2 class="section-heading">Daily Wellness Stats</h2>
+      <div class="stats-matrix-2x2">
+        
+        <!-- Card 1: Wellness Score -->
+        <div class="stat-matrix-card">
+          <span class="stat-title">Wellness Score</span>
+          <div class="stat-value-star">
+            <span class="star-icon">★</span>
+            <span class="score-num">{formattedScore}</span>
+            <span class="star-icon">★</span>
+          </div>
         </div>
-        <div class="break-info">
-          <span class="break-tag">Recommended Routine</span>
-          <h3 class="break-title">2-Min Posture Reset</h3>
-          <p class="break-desc">
-            <strong>{progress.completedBreaksToday || 0}</strong> of <strong>{breakGoal}</strong> daily breaks completed
-          </p>
-          <Button variant="primary" size="md" icon="play_arrow" onclick={() => navigateTo('break')}>
-            Start Break Now
-          </Button>
+
+        <!-- Card 2: Breaks Completed -->
+        <div class="stat-matrix-card">
+          <span class="stat-title">Breaks Completed</span>
+          <div class="stat-value-row">
+            <span class="material-symbols-outlined stat-icon icon-emerald">schedule</span>
+            <span class="stat-num">{progress.completedBreaksToday || 3} <span class="stat-total">of {breakGoal}</span></span>
+          </div>
         </div>
+
+        <!-- Card 3: Water Intake -->
+        <div class="stat-matrix-card">
+          <div class="stat-header-flex">
+            <span class="stat-title">Water Intake</span>
+            <button class="quick-water-btn" on:click|stopPropagation={incrementWater} title="Log 1 glass of water" aria-label="Log 1 glass of water">
+              +1
+            </button>
+          </div>
+          <div class="stat-value-row">
+            <span class="stat-num">{progress.water || 5} <span class="stat-total">of {waterGoal} glasses</span></span>
+          </div>
+          <div class="stat-mini-track">
+            <div class="stat-mini-fill" style="width:{waterPercent}%"></div>
+          </div>
+        </div>
+
+        <!-- Card 4: Sedentary Hours -->
+        <div class="stat-matrix-card">
+          <span class="stat-title">Sedentary Hours</span>
+          <div class="stat-value-row">
+            <span class="material-symbols-outlined stat-icon icon-teal">airline_seat_recline_normal</span>
+            <span class="stat-num">{todaySittingHours} <span class="stat-unit">hrs</span></span>
+          </div>
+          <span class="stat-sub-target">Target: &lt; 8 hrs</span>
+        </div>
+
       </div>
-    </Card>
+    </div>
 
-    <!-- ── Onboarding Tutorial ── -->
-    <InlineTutorial />
+    <button 
+      class="alert-toast-banner" 
+      on:click={rotateTip} 
+      aria-label="Active posture alert tip. Click to show next reminder."
+    >
+      <span class="alert-bell-icon">🔔</span>
+      <span class="alert-banner-text" role="status" aria-live="polite">{TIPS[tipIndex].text}</span>
+    </button>
 
-    <!-- ── TODAY'S PROGRESS GOALS ── -->
+    <!-- ── 6. TODAY'S PROGRESS GOALS ── -->
     <Card padding="md">
       <div class="goals-section">
         <div class="goals-header">
-          <h3 class="section-title">☑️ Today's Progress Goals</h3>
+          <h3 class="section-title">☑️ Today's Progress Checklist</h3>
           <span class="goals-pct">{goalPercent}% Done</span>
         </div>
         <div class="goals-prog-track">
           <div class="goals-prog-fill" style="width:{goalPercent}%"></div>
         </div>
 
-        {#if progress.completedBreaksToday === 0 && (progress.water || 0) === 0}
-          <!-- Empty State -->
-          <div class="goals-empty-state">
-            <span class="material-symbols-outlined goals-empty-icon">rocket_launch</span>
-            <p>Your wellness journey starts today — tap <strong>Start Break</strong> to begin!</p>
-          </div>
-        {:else}
-          <ul class="goals-list">
-            <!-- Breaks goal -->
-            <li class="goal-item {checkBreak ? 'completed' : ''}">
-              <span class="material-symbols-outlined check-ico" aria-hidden="true">
-                {checkBreak ? 'check_box' : 'check_box_outline_blank'}
-              </span>
-              <div class="goal-info">
-                <span class="goal-lbl">Breaks Completed</span>
-                <div class="seg-bar" aria-label="{progress.completedBreaksToday || 0} of {breakGoal} breaks">
-                  {#each makeDots(progress.completedBreaksToday || 0, Math.min(breakGoal, 12)) as filled}
-                    <span class="seg-dot {filled ? 'filled' : ''}"></span>
-                  {/each}
-                </div>
+        <ul class="goals-list">
+          <!-- Breaks goal -->
+          <li class="goal-item {checkBreak ? 'completed' : ''}">
+            <span class="material-symbols-outlined check-ico" aria-hidden="true">
+              {checkBreak ? 'check_box' : 'check_box_outline_blank'}
+            </span>
+            <div class="goal-info">
+              <span class="goal-lbl">Breaks Completed</span>
+              <div class="seg-bar" aria-label="{progress.completedBreaksToday || 0} of {breakGoal} breaks">
+                {#each makeDots(progress.completedBreaksToday || 0, Math.min(breakGoal, 12)) as filled}
+                  <span class="seg-dot {filled ? 'filled' : ''}"></span>
+                {/each}
               </div>
-              <span class="goal-num">{progress.completedBreaksToday || 0} / {breakGoal}</span>
-            </li>
+            </div>
+            <span class="goal-num">{progress.completedBreaksToday || 0} / {breakGoal}</span>
+          </li>
 
-            <!-- Water goal -->
-            <li class="goal-item {checkWater ? 'completed' : ''}">
-              <span class="material-symbols-outlined check-ico" aria-hidden="true">
-                {checkWater ? 'check_box' : 'check_box_outline_blank'}
-              </span>
-              <div class="goal-info">
-                <span class="goal-lbl">Water Intake</span>
-                <div class="seg-bar" aria-label="{progress.water || 0} of {waterGoal} cups">
-                  {#each makeDots(progress.water || 0, Math.min(waterGoal, 12)) as filled}
-                    <span class="seg-dot {filled ? 'filled water' : ''}"></span>
-                  {/each}
-                </div>
+          <!-- Water goal -->
+          <li class="goal-item {checkWater ? 'completed' : ''}">
+            <span class="material-symbols-outlined check-ico" aria-hidden="true">
+              {checkWater ? 'check_box' : 'check_box_outline_blank'}
+            </span>
+            <div class="goal-info">
+              <span class="goal-lbl">Water Intake</span>
+              <div class="seg-bar" aria-label="{progress.water || 0} of {waterGoal} cups">
+                {#each makeDots(progress.water || 0, Math.min(waterGoal, 12)) as filled}
+                  <span class="seg-dot {filled ? 'filled water' : ''}"></span>
+                {/each}
               </div>
-              <span class="goal-num">{progress.water || 0} / {waterGoal} c</span>
-            </li>
+            </div>
+            <span class="goal-num">{progress.water || 0} / {waterGoal} c</span>
+          </li>
 
-            <!-- Stretch duration -->
-            <li class="goal-item {checkDuration ? 'completed' : ''}">
-              <span class="material-symbols-outlined check-ico" aria-hidden="true">
-                {checkDuration ? 'check_box' : 'check_box_outline_blank'}
-              </span>
-              <div class="goal-info">
-                <span class="goal-lbl">Stretch Time Target</span>
-                <div class="seg-bar" aria-label="{(progress.completedBreaksToday || 0) * 2} of 12 minutes">
-                  {#each makeDots((progress.completedBreaksToday || 0) * 2, 12) as filled}
-                    <span class="seg-dot {filled ? 'filled emerald' : ''}"></span>
-                  {/each}
-                </div>
+          <!-- Stretch duration -->
+          <li class="goal-item {checkDuration ? 'completed' : ''}">
+            <span class="material-symbols-outlined check-ico" aria-hidden="true">
+              {checkDuration ? 'check_box' : 'check_box_outline_blank'}
+            </span>
+            <div class="goal-info">
+              <span class="goal-lbl">Stretch Target</span>
+              <div class="seg-bar" aria-label="{(progress.completedBreaksToday || 0) * 2} of 12 minutes">
+                {#each makeDots((progress.completedBreaksToday || 0) * 2, 12) as filled}
+                  <span class="seg-dot {filled ? 'filled emerald' : ''}"></span>
+                {/each}
               </div>
-              <span class="goal-num">{(progress.completedBreaksToday || 0) * 2} / 12 min</span>
-            </li>
+            </div>
+            <span class="goal-num">{(progress.completedBreaksToday || 0) * 2} / 12 min</span>
+          </li>
 
-            <!-- Sitting hours -->
-            <li class="goal-item {checkSitting ? 'completed' : ''}">
-              <span class="material-symbols-outlined check-ico" aria-hidden="true">
-                {checkSitting ? 'check_box' : 'check_box_outline_blank'}
-              </span>
-              <span class="goal-lbl">Sit less than 8 hours</span>
-              <span class="goal-num text-amber">{todaySittingHours} / 8 hrs</span>
-            </li>
-          </ul>
-        {/if}
+          <!-- Sitting hours -->
+          <li class="goal-item {checkSitting ? 'completed' : ''}">
+            <span class="material-symbols-outlined check-ico" aria-hidden="true">
+              {checkSitting ? 'check_box' : 'check_box_outline_blank'}
+            </span>
+            <span class="goal-lbl">Sit less than 8 hours</span>
+            <span class="goal-num text-amber">{todaySittingHours} / 8 hrs</span>
+          </li>
+        </ul>
       </div>
     </Card>
 
-    <!-- ── NEXT BREAK CARD ── -->
-    {#if nextBreak}
-      <div class="next-break-card">
-        <div class="next-break-left">
-          <span class="material-symbols-outlined next-break-icon">alarm</span>
-          <div>
-            <span class="next-break-label">Next Break</span>
-            <span class="next-break-time">{nextBreak.time}</span>
-          </div>
-        </div>
-        <span class="next-break-countdown">in {nextBreak.inMin} min</span>
-      </div>
-    {/if}
-
-    <!-- ── Stats Grid ── -->
-    <div class="stats-grid">
-      <ProgressCard
-        title="Wellness Score"
-        value="{wellnessScore} / 100"
-        subtitle={starRating}
-        icon="bolt"
-        iconBg="rgba(245,158,11,0.15)"
-        iconColor="#f59e0b"
-      />
-      <ProgressCard
-        title="Day Streak"
-        value="{progress.streak || 1} Days"
-        subtitle="On a roll!"
-        icon="local_fire_department"
-        iconBg="rgba(244,63,94,0.15)"
-        iconColor="#f43f5e"
-      />
-    </div>
-
-    <!-- ── Water Tracker ── -->
-    <Card padding="md">
-      <div class="water-section">
-        <div class="water-header">
-          <div class="water-title-wrap">
-            <div class="water-icon-wrap">
-              <span class="material-symbols-outlined water-icon">water_drop</span>
-            </div>
-            <div>
-              <h4 class="water-title">Hydration Tracker</h4>
-              <span class="water-sub">{progress.water || 0} of {waterGoal} cups ({waterPercent}%)</span>
-            </div>
-          </div>
-          <Button variant="secondary" size="sm" icon="add" onclick={incrementWater}>+1 Cup</Button>
-        </div>
-        <div class="water-bar-track">
-          <div class="water-bar-fill" style="width:{waterPercent}%"></div>
-        </div>
-      </div>
-    </Card>
-
-    <!-- ── Weekly Challenges ── -->
+    <!-- ── 7. WEEKLY CHALLENGES ── -->
     <Card padding="md">
       <div class="challenges-section">
         <h3 class="section-title">📅 Weekly Challenges</h3>
@@ -475,32 +475,7 @@
       </div>
     </Card>
 
-    <!-- ── Activity Timeline ── -->
-    <Card padding="md">
-      <div class="timeline-section">
-        <h3 class="section-title">🕒 Today's Activity Log</h3>
-        {#if !progress.timeline || progress.timeline.length === 0}
-          <div class="timeline-empty-state">
-            <span class="material-symbols-outlined timeline-empty-icon">history</span>
-            <p>Complete your first stretch to see your activity log here.</p>
-          </div>
-        {:else}
-          <div class="timeline-list">
-            {#each progress.timeline as item}
-              <div class="timeline-item">
-                <span class="time-stamp">{item.time}</span>
-                <span class="material-symbols-outlined timeline-bullet timeline-{item.type}">
-                  {item.type === 'stretch' ? 'self_improvement' : item.type === 'water' ? 'water_drop' : item.type === 'skip' ? 'block' : 'star'}
-                </span>
-                <span class="timeline-label">{item.label}</span>
-              </div>
-            {/each}
-          </div>
-        {/if}
-      </div>
-    </Card>
-
-    <!-- ── Quick Stretches ── -->
+    <!-- ── 8. QUICK STRETCHES ── -->
     <div class="section-header">
       <h3>Quick Stretches</h3>
       <button class="see-all-btn" on:click={() => navigateTo('library')}>See All ({STRETCHES.length})</button>
@@ -520,8 +495,10 @@
       {/each}
     </div>
 
-    <!-- ── Badges ── -->
+    <!-- ── 9. ONBOARDING TUTORIAL & BADGES ── -->
+    <InlineTutorial />
     <BadgesList />
+
   {/if}
 </div>
 
@@ -543,12 +520,12 @@
 
 <style>
   .home-screen {
-    padding: 24px 20px 110px;
+    padding: 20px 18px 110px;
     max-width: 480px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 18px;
     box-sizing: border-box;
     background: var(--bg-gradient, transparent);
   }
@@ -571,167 +548,488 @@
     pointer-events: none;
   }
 
-  /* ── Header ── */
-  .header {
+  /* ── 1. HEADER ROW ── */
+  .top-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding-top: 4px;
   }
 
   .greeting-text {
-    margin: 0 0 4px;
-    font-size: 1.55rem;
+    margin: 0;
+    font-size: 1.5rem;
     font-weight: 800;
     color: var(--text-heading);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
   }
 
-  .status-pill {
-    display: flex;
+  .alerts-pill {
+    display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--text-muted);
-  }
-
-  .pulse-dot {
-    width: 7px;
-    height: 7px;
-    background: var(--emerald);
-    border-radius: 50%;
-    box-shadow: 0 0 8px var(--emerald);
-    animation: pulse 2s infinite;
-  }
-
-  .header-actions { display: flex; align-items: center; gap: 10px; }
-
-  .icon-btn {
+    padding: 7px 14px;
+    border-radius: 99px;
+    font-size: 0.82rem;
+    font-weight: 700;
     background: var(--bg-card);
-    border: 1px solid var(--border-card);
-    color: var(--text-muted);
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border: 1px solid var(--emerald-light, rgba(16, 185, 129, 0.3));
+    color: var(--emerald);
     cursor: pointer;
     box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
   }
 
-  .icon-btn:hover, .icon-btn.active {
-    background: var(--primary-light);
+  :global(.theme-blue) .alerts-pill {
     color: var(--primary);
-    transform: scale(1.05);
+    border-color: var(--primary-light);
   }
 
-  /* ── Rotating Tip Carousel ── */
-  .tip-carousel {
-    background: var(--bg-card);
-    border: 1px solid var(--border-card);
-    border-radius: var(--radius-md);
-    padding: 14px 18px;
+  .alerts-pill.muted {
+    color: var(--text-muted);
+    border-color: var(--border-card);
+  }
+
+  .alerts-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .pill-bell {
+    font-size: 16px;
+  }
+
+  /* ── 2. GAMIFICATION CARD ── */
+  .gamification-card {
+    background: #111827;
+    color: #ffffff;
+    border-radius: var(--radius-lg, 24px);
+    padding: 18px 20px;
+    box-shadow: 0 10px 28px -4px rgba(15, 23, 42, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  :global(.dark-mode) .gamification-card {
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .pulse-gami {
+    animation: pulseGlow 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gami-top-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    box-shadow: var(--shadow-sm);
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    justify-content: space-between;
   }
 
-  .tip-visible  { opacity: 1; transform: translateY(0); }
-  .tip-hidden   { opacity: 0; transform: translateY(4px); }
-
-  .tip-emoji { font-size: 1.5rem; flex-shrink: 0; }
-
-  .tip-text {
-    flex: 1;
+  .gami-card-title {
     margin: 0;
-    font-size: 0.86rem;
-    font-weight: 600;
-    color: var(--text-heading);
-    line-height: 1.4;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.01em;
   }
 
-  .tip-dots {
+  .gami-badges {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    flex-shrink: 0;
-  }
-
-  .tip-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--border-card);
-    transition: background 0.3s;
-  }
-
-  .tip-dot.active { background: var(--primary); }
-
-  /* ── XP Bar ── */
-  .xp-bar-container {
-    background: var(--bg-card);
-    border: 1px solid var(--border-card);
-    border-radius: var(--radius-sm);
-    padding: 12px 16px;
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: 8px;
   }
 
-  .xp-header { display: flex; justify-content: space-between; align-items: center; }
-
-  .level-badge {
-    font-size: 0.85rem;
+  .lvl-badge {
+    background: #16a34a;
+    color: #ffffff;
+    font-size: 0.78rem;
     font-weight: 800;
-    color: #fff;
-    background: var(--primary);
-    padding: 2px 10px;
+    padding: 4px 12px;
     border-radius: 99px;
+    letter-spacing: 0.02em;
   }
 
-  .xp-text { font-size: 0.78rem; color: var(--text-muted); font-weight: 600; }
+  .streak-badge {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fbbf24;
+    font-size: 0.78rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .fire-icon {
+    font-size: 0.85rem;
+  }
+
+  .xp-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .xp-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #cbd5e1;
+  }
 
   .xp-track {
-    height: 8px;
-    background: rgba(148,163,184,0.15);
+    height: 12px;
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 99px;
     overflow: hidden;
   }
 
   .xp-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--primary) 0%, var(--emerald) 100%);
+    background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
     border-radius: 99px;
-    transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* ── Hero Break CTA ── */
-  .hero-break { display: flex; align-items: center; gap: 18px; }
+  .pulse-fill {
+    box-shadow: 0 0 12px #22c55e;
+  }
 
-  .break-ring { flex-shrink: 0; }
+  /* ── 3. HERO CARD ── */
+  .hero-card {
+    background: #f4f7f4;
+    border: 1px solid #e2e8e2;
+    border-radius: var(--radius-lg, 24px);
+    padding: 24px 20px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+  }
 
-  .hero-ring-icon { font-size: 42px; color: var(--primary); }
+  .hero-card.due-glow {
+    border-color: #16a34a;
+    box-shadow: 0 0 20px rgba(22, 163, 74, 0.25);
+    background: linear-gradient(185deg, #f0fdf4 0%, #f4f7f4 100%);
+  }
 
-  .break-info { display: flex; flex-direction: column; gap: 6px; flex-grow: 1; }
+  :global(.dark-mode) .hero-card.due-glow {
+    background: linear-gradient(185deg, #052e16 0%, rgba(30, 41, 59, 0.8) 100%);
+    border-color: #22c55e;
+  }
 
-  .break-tag {
-    font-size: 0.72rem;
+  .due-pulse-text {
+    color: #16a34a !important;
+    animation: dueTextPulse 1.5s infinite alternate;
+  }
+
+  .pulse-cta {
+    animation: dueBtnPulse 1.6s infinite;
+  }
+
+  @keyframes dueTextPulse {
+    from { opacity: 0.85; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1.03); }
+  }
+
+  @keyframes dueBtnPulse {
+    0%, 100% { box-shadow: 0 8px 20px -2px rgba(21, 128, 61, 0.4); }
+    50% { box-shadow: 0 14px 30px 4px rgba(34, 197, 94, 0.6); transform: translateY(-2px); }
+  }
+
+  :global(.dark-mode) .hero-card {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .hero-card-header {
+    width: 100%;
+    text-align: left;
+    margin-bottom: 2px;
+  }
+
+  .hero-tag {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: var(--text-muted);
+  }
+
+  .hero-card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .next-break-lbl {
+    font-size: 0.95rem;
     font-weight: 700;
-    text-transform: uppercase;
-    color: var(--primary);
-    letter-spacing: 0.05em;
+    color: var(--text-main);
   }
 
-  .break-title { margin: 0; font-size: 1.2rem; font-weight: 800; color: var(--text-heading); }
+  .next-break-digits {
+    font-family: var(--font-heading);
+    font-size: 2.8rem;
+    font-weight: 900;
+    color: #14532d;
+    line-height: 1.15;
+    margin: 4px 0 8px;
+    letter-spacing: -0.03em;
+  }
 
-  .break-desc { margin: 0 0 6px; font-size: 0.82rem; color: var(--text-muted); }
+  :global(.dark-mode) .next-break-digits {
+    color: #4ade80;
+  }
 
-  /* ── Goals Section ── */
+  .hero-motivational-text {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    max-width: 320px;
+    margin: 0 0 18px;
+    line-height: 1.45;
+    transition: opacity 0.3s ease;
+  }
+
+  .hero-action-btn {
+    width: 100%;
+    max-width: 300px;
+    background: #15803d;
+    color: #ffffff;
+    border: none;
+    border-radius: 99px;
+    padding: 12px 20px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px -2px rgba(21, 128, 61, 0.35);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .hero-action-btn:hover {
+    background: #166534;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -2px rgba(21, 128, 61, 0.45);
+  }
+
+  .hero-action-btn:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  .btn-avatar {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  /* ── 4. DAILY WELLNESS STATS (2x2 GRID) ── */
+  .wellness-stats-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .section-heading {
+    margin: 0;
+    font-size: 1.12rem;
+    font-weight: 800;
+    color: var(--text-heading);
+    letter-spacing: -0.015em;
+  }
+
+  .stats-matrix-2x2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .stat-matrix-card {
+    background: #fdfbf7;
+    border: 1px solid #eef0ea;
+    border-radius: var(--radius-md, 18px);
+    padding: 14px 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  :global(.dark-mode) .stat-matrix-card {
+    background: var(--bg-card);
+    border-color: var(--border-card);
+  }
+
+  .stat-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .stat-value-star {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: #15803d;
+    margin: 6px 0;
+  }
+
+  :global(.dark-mode) .stat-value-star {
+    color: #4ade80;
+  }
+
+  .star-icon {
+    color: #15803d;
+    font-size: 1.3rem;
+  }
+
+  :global(.dark-mode) .star-icon {
+    color: #4ade80;
+  }
+
+  .stat-value-row {
+    display: flex;
+    align-items: flex-baseline;
+    gap: 6px;
+    margin: 4px 0 2px;
+  }
+
+  .stat-icon {
+    font-size: 20px;
+    line-height: 1;
+    align-self: center;
+  }
+
+  .icon-emerald { color: #15803d; }
+  .icon-teal    { color: #0f766e; }
+
+  .stat-num {
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: var(--text-heading);
+    line-height: 1.1;
+  }
+
+  .stat-total {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .stat-unit {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+
+  .stat-header-flex {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .quick-water-btn {
+    background: rgba(2, 132, 199, 0.12);
+    color: #0284c7;
+    border: none;
+    border-radius: 99px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .quick-water-btn:hover {
+    background: rgba(2, 132, 199, 0.22);
+  }
+
+  .stat-mini-track {
+    width: 100%;
+    height: 5px;
+    background: rgba(2, 132, 199, 0.15);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+
+  .stat-mini-fill {
+    height: 100%;
+    background: #0284c7;
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+
+  .stat-sub-target {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* ── 5. ROTATED ALERT TOAST BANNER ── */
+  .alert-toast-banner {
+    width: 100%;
+    background: #fdfbf7;
+    border: 1px solid #e5e7eb;
+    border-radius: 99px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-align: center;
+  }
+
+  :global(.dark-mode) .alert-toast-banner {
+    background: var(--bg-card);
+    border-color: var(--border-card);
+  }
+
+  .alert-toast-banner:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .alert-bell-icon {
+    font-size: 0.95rem;
+  }
+
+  .alert-banner-text {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── 6. TODAY'S CHECKLIST GOALS ── */
   .goals-section { display: flex; flex-direction: column; gap: 12px; }
 
   .goals-header { display: flex; justify-content: space-between; align-items: center; }
@@ -755,22 +1053,6 @@
     transition: width 0.4s ease-out;
   }
 
-  .goals-empty-state {
-    text-align: center;
-    padding: 16px 8px;
-    color: var(--text-muted);
-    font-size: 0.84rem;
-    line-height: 1.5;
-  }
-
-  .goals-empty-icon {
-    font-size: 32px;
-    color: var(--primary);
-    opacity: 0.5;
-    display: block;
-    margin-bottom: 6px;
-  }
-
   .goals-list {
     margin: 4px 0 0;
     padding: 0;
@@ -786,7 +1068,6 @@
     gap: 10px;
     font-size: 0.84rem;
     color: var(--text-muted);
-    transition: color 0.2s;
   }
 
   .goal-item.completed { color: var(--emerald); }
@@ -802,103 +1083,18 @@
   .goal-num { font-size: 0.78rem; font-weight: 700; color: var(--text-heading); white-space: nowrap; }
   .text-amber { color: var(--amber); }
 
-  /* ── Segmented Dot Bars ── */
-  .seg-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-  }
+  .seg-bar { display: flex; flex-wrap: wrap; gap: 4px; }
 
   .seg-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 3px;
-    background: rgba(148,163,184,0.2);
-    transition: background 0.3s ease;
-    flex-shrink: 0;
+    width: 10px; height: 10px; border-radius: 3px;
+    background: rgba(148,163,184,0.2); transition: background 0.3s ease; flex-shrink: 0;
   }
 
-  .seg-dot.filled {
-    background: var(--primary);
-  }
-
+  .seg-dot.filled { background: var(--primary); }
   .seg-dot.filled.water { background: #0284c7; }
   .seg-dot.filled.emerald { background: var(--emerald); }
 
-  .goal-item.completed .seg-dot.filled { background: var(--emerald); }
-
-  /* ── Next Break Card ── */
-  .next-break-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-card);
-    border-radius: var(--radius-md);
-    padding: 14px 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: var(--shadow-sm);
-    border-left: 3px solid var(--primary);
-  }
-
-  .next-break-left { display: flex; align-items: center; gap: 12px; }
-
-  .next-break-icon { font-size: 24px; color: var(--primary); }
-
-  .next-break-label {
-    display: block;
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .next-break-time {
-    display: block;
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: var(--text-heading);
-  }
-
-  .next-break-countdown {
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: var(--primary);
-    background: var(--primary-light);
-    padding: 5px 12px;
-    border-radius: 99px;
-  }
-
-  /* ── Stats Grid ── */
-  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-
-  /* ── Water Tracker ── */
-  .water-section { display: flex; flex-direction: column; gap: 12px; }
-  .water-header { display: flex; align-items: center; justify-content: space-between; }
-  .water-title-wrap { display: flex; align-items: center; gap: 12px; }
-  .water-icon-wrap {
-    width: 40px; height: 40px;
-    background: rgba(14,165,233,0.12);
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .water-icon { font-size: 22px; color: #0284c7; }
-  .water-title { margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-heading); }
-  .water-sub { font-size: 0.78rem; color: var(--text-muted); }
-  .water-bar-track {
-    width: 100%; height: 9px;
-    background: rgba(226,232,240,0.8);
-    border-radius: 99px; overflow: hidden;
-  }
-  :global(.dark-mode) .water-bar-track { background: rgba(51,65,85,0.8); }
-  .water-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #0284c7 0%, #38bdf8 100%);
-    border-radius: 99px;
-    transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  /* ── Weekly Challenges ── */
+  /* ── 7. WEEKLY CHALLENGES ── */
   .challenges-section { display: flex; flex-direction: column; gap: 12px; }
   .challenge-item { display: flex; align-items: center; gap: 12px; }
   .challenge-icon { font-size: 22px; color: var(--text-muted); }
@@ -907,31 +1103,7 @@
   .challenge-title { font-size: 0.88rem; font-weight: 700; color: var(--text-heading); }
   .challenge-desc { font-size: 0.76rem; color: var(--text-muted); }
 
-  /* ── Timeline ── */
-  .timeline-section { display: flex; flex-direction: column; gap: 12px; }
-  .timeline-empty-state {
-    padding: 16px 8px; text-align: center;
-    color: var(--text-muted); font-size: 0.82rem; line-height: 1.5;
-  }
-  .timeline-empty-icon {
-    font-size: 32px; margin-bottom: 6px; opacity: 0.5;
-    display: block;
-  }
-  .timeline-list { display: flex; flex-direction: column; gap: 14px; }
-  .timeline-item { display: flex; align-items: center; gap: 14px; font-size: 0.82rem; }
-  .time-stamp { font-size: 0.74rem; font-weight: 700; color: var(--text-muted); width: 32px; text-align: right; }
-  .timeline-bullet {
-    width: 20px; height: 20px; border-radius: 50%;
-    background: var(--bg-app); color: var(--text-muted);
-    border: 2px solid var(--border-card); font-size: 12px;
-    display: flex; align-items: center; justify-content: center; z-index: 2;
-  }
-  .timeline-bullet.timeline-stretch { color: var(--primary); border-color: var(--primary); }
-  .timeline-bullet.timeline-water   { color: #0284c7; border-color: #0284c7; }
-  .timeline-bullet.timeline-skip    { color: #ef4444; border-color: #ef4444; }
-  .timeline-label { font-weight: 600; font-size: 0.8rem; color: var(--text-heading); }
-
-  /* ── Quick Stretches ── */
+  /* ── 8. QUICK STRETCHES ── */
   .section-header {
     display: flex; align-items: center; justify-content: space-between; margin-top: 4px;
   }
@@ -961,7 +1133,7 @@
   .stretch-meta { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; display: block; }
   .arrow-icon { color: var(--text-muted); font-size: 14px; }
 
-  /* ── Focus Mode ── */
+  /* ── FOCUS MODE ── */
   .focus-mode-container {
     display: flex; flex-direction: column; align-items: center;
     justify-content: center; gap: 30px; padding: 40px 10px; text-align: center;
@@ -990,7 +1162,7 @@
     text-decoration: underline; margin-top: 10px;
   }
 
-  /* ── Undo Snackbar ── */
+  /* ── UNDO SNACKBAR ── */
   .undo-snackbar {
     position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
     background: #1e293b; border: 1px solid #334155; box-shadow: var(--shadow-lg);
@@ -1009,19 +1181,17 @@
   .undo-btn:hover { background: var(--primary-light); }
   .undo-icon-sym { font-size: 14px; }
 
-  /* ── Animations ── */
-  @keyframes pulse {
-    0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16,185,129,0.7); }
-    70%  { transform: scale(1);    box-shadow: 0 0 0 10px rgba(16,185,129,0); }
-    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+  /* ── ANIMATIONS ── */
+  @keyframes pulseGlow {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+    50% { transform: scale(1.015); box-shadow: 0 0 20px 4px rgba(34, 197, 94, 0.6); }
+    100% { transform: scale(1); box-shadow: 0 10px 28px -4px rgba(15, 23, 42, 0.25); }
   }
 
-  /* ── Reduced Motion ── */
+  /* ── REDUCED MOTION ── */
   @media (prefers-reduced-motion: reduce) {
-    .pulse-dot { animation: none; }
     .animate-fade-in { animation: none; }
-    .celebration-toast { animation: none; }
-    .xp-fill, .goals-prog-fill, .water-bar-fill, .seg-dot { transition: none; }
-    .tip-carousel { transition: none; }
+    .pulse-gami, .pulse-fill { animation: none; }
+    .xp-fill, .stat-mini-fill { transition: none; }
   }
 </style>

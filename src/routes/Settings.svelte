@@ -6,7 +6,7 @@
   import Modal from '../components/Modal.svelte';
   import AuthModal from '../components/AuthModal.svelte';
   import { appStore, updateSettings, resetAppState, navigateTo, logoutAppwriteSession, checkAndSyncAuth, importBackupAction, updateProfile } from '../stores/app.js';
-  import { requestNotificationPermission } from '../utils/notifications.js';
+  import { requestNotificationPermission, playChime, sendStretchNotification, playAlertSound, playCelebrationSound } from '../utils/notifications.js';
   import { exportBackup, importBackup } from '../services/backup.js';
   import { runSystemDiagnostics } from '../services/diagnostics.js';
   import { loadLocale } from '../utils/i18n.js';
@@ -67,6 +67,29 @@
     } else {
       updateSettings({ notificationsEnabled: false });
     }
+  }
+
+  let testAlertFeedback = '';
+  async function handleTestAlert() {
+    playChime();
+    const granted = await requestNotificationPermission();
+    if (granted) {
+      sendStretchNotification('StretchNow Alert Check 🧘', 'Desktop notifications & sound chime are working!');
+      testAlertFeedback = '✅ Sound chime played & test notification sent!';
+    } else {
+      testAlertFeedback = '🔊 Sound chime played! (Enable notifications in browser settings for popups)';
+    }
+    setTimeout(() => { testAlertFeedback = ''; }, 4000);
+  }
+
+  function handlePreviewReminderSound(type) {
+    updateSettings({ reminderSound: type });
+    playAlertSound(type);
+  }
+
+  function handlePreviewCelebrationSound(type) {
+    updateSettings({ celebrationSound: type });
+    playCelebrationSound(type);
   }
 
   function handleToggleSound(val) {
@@ -279,6 +302,76 @@
         description="Play gentle chimes when break countdowns complete."
         onchange={handleToggleSound}
       />
+
+      {#if settings.soundEnabled !== false}
+        <!-- Reminder Chime Selector -->
+        <div class="sound-select-group animate-fade-in">
+          <label class="sound-select-lbl" for="reminder-sound-select">
+            <span>🔔 Reminder Chime Profile</span>
+          </label>
+          <div class="sound-select-flex">
+            <select
+              id="reminder-sound-select"
+              class="settings-sound-select"
+              value={settings.reminderSound || 'zen'}
+              on:change={(e) => handlePreviewReminderSound(e.currentTarget.value)}
+            >
+              <option value="zen">🧘 Zen Harmony (Soft Dual-Tone)</option>
+              <option value="crystal">💎 Crystal Drop (Crisp Glass Triad)</option>
+              <option value="marimba">🪵 Marimba Pulse (Warm Wooden Knock)</option>
+              <option value="digital">⚡ Digital Beep (Clean Electronic)</option>
+              <option value="gong">🔔 Calm Gong (Low Resonant Chime)</option>
+            </select>
+            <button
+              type="button"
+              class="sound-preview-btn"
+              on:click={() => handlePreviewReminderSound(settings.reminderSound || 'zen')}
+              title="Preview Reminder Sound"
+              aria-label="Preview Reminder Sound"
+            >
+              <span class="material-symbols-outlined">volume_up</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Celebration Sound Selector -->
+        <div class="sound-select-group animate-fade-in">
+          <label class="sound-select-lbl" for="celebration-sound-select">
+            <span>🎉 Celebration Victory Audio</span>
+          </label>
+          <div class="sound-select-flex">
+            <select
+              id="celebration-sound-select"
+              class="settings-sound-select"
+              value={settings.celebrationSound || 'victory'}
+              on:change={(e) => handlePreviewCelebrationSound(e.currentTarget.value)}
+            >
+              <option value="victory">🏆 Victory Fanfare (Triumphant Chord)</option>
+              <option value="level_up">✨ Level Up Sparkle (Ascending Arpeggio)</option>
+              <option value="fanfare">🎺 Grand Achievement (Rich Brass Resolution)</option>
+              <option value="bubbly">🎈 Bubbly Joy (Playful Popping Tones)</option>
+            </select>
+            <button
+              type="button"
+              class="sound-preview-btn"
+              on:click={() => handlePreviewCelebrationSound(settings.celebrationSound || 'victory')}
+              title="Preview Celebration Sound"
+              aria-label="Preview Celebration Sound"
+            >
+              <span class="material-symbols-outlined">workspace_premium</span>
+            </button>
+          </div>
+        </div>
+      {/if}
+
+      <div class="test-alert-box">
+        <Button variant="secondary" size="sm" icon="volume_up" onclick={handleTestAlert}>
+          Test Sound & Notification Alert
+        </Button>
+        {#if testAlertFeedback}
+          <div class="test-feedback-msg animate-fade-in">{testAlertFeedback}</div>
+        {/if}
+      </div>
     </div>
   </Card>
 
@@ -576,6 +669,77 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+  }
+
+  .sound-select-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .sound-select-lbl {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  .sound-select-flex {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .settings-sound-select {
+    flex: 1;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-card);
+    background: var(--bg-card);
+    color: var(--text-heading);
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .sound-preview-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-sm);
+    background: var(--primary-light);
+    border: 1px solid var(--border-card);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .sound-preview-btn:hover {
+    background: var(--primary);
+    color: #ffffff;
+    transform: scale(1.05);
+  }
+
+  .test-alert-box {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-card);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .test-feedback-msg {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--emerald);
+    background: var(--emerald-light);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
   }
 
   .cloud-desc {

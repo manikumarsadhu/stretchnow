@@ -1,3 +1,5 @@
+import { getLocalDateString, getYesterdayLocalDateString } from './date.js';
+
 const STORAGE_KEY = 'stretchnow_v1_data';
 
 export const DEFAULT_STATE = {
@@ -40,7 +42,7 @@ export const DEFAULT_STATE = {
     lastSummaryShownDate: null,
     timeline: [],
     reflections: {},
-    lastActiveDate: new Date().toISOString().split('T')[0]
+    lastActiveDate: getLocalDateString()
   },
   statistics: {
     dailyBreaks: [3, 5, 4, 6, 5, 7, 4],
@@ -66,9 +68,9 @@ export function loadState() {
     const parsed = JSON.parse(raw);
     
     // Check if day changed to reset daily counters
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     if (parsed.progress && parsed.progress.lastActiveDate !== today) {
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      const yesterday = getYesterdayLocalDateString();
       const maintainedStreak = parsed.progress.lastActiveDate === yesterday && parsed.progress.completedBreaksToday > 0;
       
       parsed.progress = {

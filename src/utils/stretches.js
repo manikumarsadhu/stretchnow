@@ -1,3 +1,5 @@
+import neckVideo from '../media/neck excercise video.mp4';
+
 export const STRETCH_CATEGORIES = [
   { id: 'all', label: 'All Routines', icon: 'apps' },
   { id: 'neck', label: 'Neck & Shoulders', icon: 'self_improvement' },
@@ -14,6 +16,9 @@ export const STRETCHES = [
     title: 'Gentle Neck Release',
     category: 'neck',
     duration: 30,
+    videoUrl: neckVideo,
+    appwriteStorageFileId: '6a6af236001a9cd9ec67',
+    hasVideo: true,
     difficulty: 'Easy',
     target: 'Cervical Spine & Upper Traps',
     icon: 'accessibility_new',

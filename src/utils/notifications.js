@@ -10,15 +10,175 @@ function getAlertSettings() {
   } catch (e) {
     console.error('Error reading settings for notification alert:', e);
   }
-  return { alertMode: 'tone', soundEnabled: true };
+  return { alertMode: 'tone', soundEnabled: true, reminderSound: 'zen', celebrationSound: 'victory' };
+}
+
+let sharedAudioCtx = null;
+function getAudioContext() {
+  if (!sharedAudioCtx) {
+    const AudioContextClass = window.AudioContext || /** @type {any} */(window).webkitAudioContext;
+    if (AudioContextClass) sharedAudioCtx = new AudioContextClass();
+  }
+  if (sharedAudioCtx && sharedAudioCtx.state === 'suspended') {
+    sharedAudioCtx.resume();
+  }
+  return sharedAudioCtx;
+}
+
+// ── Alert Sound Profiles ──
+export function playAlertSound(type = 'zen') {
+  try {
+    const audioCtx = getAudioContext();
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+
+    if (type === 'crystal') {
+      // High crisp 3-note triad: C6 (1046.5Hz), E6 (1318.5Hz), G6 (1567.98Hz)
+      [1046.5, 1318.5, 1567.98].forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+        gain.gain.setValueAtTime(0.001, now + idx * 0.08);
+        gain.gain.linearRampToValueAtTime(0.2, now + idx * 0.08 + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.45);
+        osc.start(now + idx * 0.08);
+        osc.stop(now + idx * 0.08 + 0.5);
+      });
+    } else if (type === 'marimba') {
+      // Warm wooden percussive double knock: F4 (349.23Hz) -> C5 (523.25Hz)
+      [349.23, 523.25].forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+        gain.gain.setValueAtTime(0.001, now + idx * 0.12);
+        gain.gain.linearRampToValueAtTime(0.35, now + idx * 0.12 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.3);
+        osc.start(now + idx * 0.12);
+        osc.stop(now + idx * 0.12 + 0.35);
+      });
+    } else if (type === 'digital') {
+      // Tech double-beep: 900Hz -> 1350Hz
+      [900, 1350].forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+        gain.gain.setValueAtTime(0.001, now + idx * 0.1);
+        gain.gain.linearRampToValueAtTime(0.12, now + idx * 0.1 + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.12);
+        osc.start(now + idx * 0.1);
+        osc.stop(now + idx * 0.1 + 0.14);
+      });
+    } else if (type === 'gong') {
+      // Low resonant gong: 220Hz -> 440Hz
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(220, now);
+      osc.frequency.exponentialRampToValueAtTime(440, now + 0.8);
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.3, now + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+      osc.start(now);
+      osc.stop(now + 1.25);
+    } else {
+      // Default Zen Bell dual tone: E5 (659.25Hz) -> A5 (880Hz)
+      playChime();
+    }
+  } catch (e) {
+    console.warn('Could not play alert sound:', e);
+  }
+}
+
+// ── Celebration Sound Profiles ──
+export function playCelebrationSound(type = 'victory') {
+  try {
+    const audioCtx = getAudioContext();
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+
+    if (type === 'level_up') {
+      // Fast ascending 5-note sparkle arpeggio: C5 -> E5 -> G5 -> C6 -> E6
+      [523.25, 659.25, 783.99, 1046.5, 1318.51].forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+        gain.gain.setValueAtTime(0.001, now + idx * 0.07);
+        gain.gain.linearRampToValueAtTime(0.22, now + idx * 0.07 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.4);
+        osc.start(now + idx * 0.07);
+        osc.stop(now + idx * 0.07 + 0.45);
+      });
+    } else if (type === 'fanfare') {
+      // Grand brass triad chord: G4 + C5 + E5 + G5
+      [392.00, 523.25, 659.25, 783.99].forEach((freq) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+        osc.start(now);
+        osc.stop(now + 0.95);
+      });
+    } else if (type === 'bubbly') {
+      // Bubbly joy: 3 fast rising popping tones
+      [440, 660, 880].forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+        osc.frequency.exponentialRampToValueAtTime(freq * 1.3, now + idx * 0.06 + 0.08);
+        gain.gain.setValueAtTime(0.001, now + idx * 0.06);
+        gain.gain.linearRampToValueAtTime(0.25, now + idx * 0.06 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.25);
+        osc.start(now + idx * 0.06);
+        osc.stop(now + idx * 0.06 + 0.28);
+      });
+    } else {
+      // Victory Fanfare (Default): C5 -> E5 -> G5 -> C6
+      [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = idx === 3 ? 'sine' : 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+        gain.gain.setValueAtTime(0.001, now + idx * 0.09);
+        gain.gain.linearRampToValueAtTime(0.25, now + idx * 0.09 + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + (idx === 3 ? 0.7 : 0.35));
+        osc.start(now + idx * 0.09);
+        osc.stop(now + idx * 0.09 + (idx === 3 ? 0.75 : 0.4));
+      });
+    }
+  } catch (e) {
+    console.warn('Could not play celebration sound:', e);
+  }
 }
 
 export function playChime() {
   try {
-    const AudioContext = window.AudioContext || /** @type {any} */(window).webkitAudioContext;
-    if (!AudioContext) return;
-    
-    const audioCtx = new AudioContext();
+    const audioCtx = getAudioContext();
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
     
     // Tone 1 (E5)
     const osc1 = audioCtx.createOscillator();
@@ -26,12 +186,12 @@ export function playChime() {
     osc1.connect(gain1);
     gain1.connect(audioCtx.destination);
     osc1.type = 'sine';
-    osc1.frequency.setValueAtTime(659.25, audioCtx.currentTime);
-    gain1.gain.setValueAtTime(0.001, audioCtx.currentTime);
-    gain1.gain.linearRampToValueAtTime(0.25, audioCtx.currentTime + 0.05);
-    gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.55);
-    osc1.start(audioCtx.currentTime);
-    osc1.stop(audioCtx.currentTime + 0.6);
+    osc1.frequency.setValueAtTime(659.25, now);
+    gain1.gain.setValueAtTime(0.001, now);
+    gain1.gain.linearRampToValueAtTime(0.25, now + 0.05);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    osc1.start(now);
+    osc1.stop(now + 0.6);
     
     // Tone 2 (A5)
     const osc2 = audioCtx.createOscillator();
@@ -39,12 +199,12 @@ export function playChime() {
     osc2.connect(gain2);
     gain2.connect(audioCtx.destination);
     osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(880.00, audioCtx.currentTime + 0.12);
-    gain2.gain.setValueAtTime(0.001, audioCtx.currentTime + 0.12);
-    gain2.gain.linearRampToValueAtTime(0.25, audioCtx.currentTime + 0.17);
-    gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.67);
-    osc2.start(audioCtx.currentTime + 0.12);
-    osc2.stop(audioCtx.currentTime + 0.72);
+    osc2.frequency.setValueAtTime(880.00, now + 0.12);
+    gain2.gain.setValueAtTime(0.001, now + 0.12);
+    gain2.gain.linearRampToValueAtTime(0.25, now + 0.17);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.67);
+    osc2.start(now + 0.12);
+    osc2.stop(now + 0.72);
   } catch (e) {
     console.warn('Synthesized chime failed to play:', e);
   }
@@ -129,7 +289,7 @@ export function sendStretchNotification(title, body) {
       });
       
       if (mode === 'tone' && settings.soundEnabled !== false) {
-        playChime();
+        playAlertSound(settings.reminderSound || 'zen');
       }
       
       if (mode === 'vibrate' && 'vibrate' in navigator) {

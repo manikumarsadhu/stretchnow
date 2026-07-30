@@ -116,7 +116,12 @@
               <div class="item-info">
                 <div class="item-top">
                   <h4 class="item-title">{s.title}</h4>
-                  <span class="badge badge-{s.difficulty.toLowerCase()}">{s.difficulty}</span>
+                  <div class="badges-wrap">
+                    {#if s.hasVideo}
+                      <span class="badge badge-video">📹 Video</span>
+                    {/if}
+                    <span class="badge badge-{s.difficulty.toLowerCase()}">{s.difficulty}</span>
+                  </div>
                 </div>
                 <span class="item-target">🎯 {s.target}</span>
                 <span class="item-duration">⏱️ {s.duration} seconds • {s.estimatedCalories} kcal</span>
@@ -133,7 +138,7 @@
     <Modal isOpen={true} title={activeModalStretch.title} onclose={closeModal}>
       <div class="modal-detail">
         <!-- Dynamic Stretch Animation Guide -->
-        <StretchAnimation id={activeModalStretch.id} />
+        <StretchAnimation id={activeModalStretch.id} videoUrl={activeModalStretch.videoUrl} />
 
         <div class="detail-header">
           <div>
@@ -385,6 +390,13 @@
   .badge-easy { background: var(--emerald-light); color: var(--emerald); }
   .badge-medium { background: var(--amber-light); color: var(--amber); }
   .badge-gentle { background: var(--primary-light); color: var(--primary); }
+  .badge-video { background: rgba(99, 102, 241, 0.15); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3); }
+  
+  .badges-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
 
   .item-target {
     font-size: 0.8rem;

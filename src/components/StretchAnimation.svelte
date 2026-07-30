@@ -1,10 +1,24 @@
 <script>
+  import neckVideo from '../media/neck excercise video.mp4';
+  import { getAppwriteStorageVideoUrl } from '../lib/appwrite.js';
+
   export let id = '';
+  export let videoUrl = '';
   export let posterOnly = false;
   export let active = true;
 
   let isZoomed = false;
   let animateMotion = active;
+
+  /** @type {Record<string, string>} */
+  const CLOUD_STORAGE_FILES = {
+    'neck-tilt': '6a6af236001a9cd9ec67'
+  };
+
+  /** @type {Record<string, string>} */
+  const VIDEO_MAP = {
+    'neck-tilt': neckVideo
+  };
 
   /** @type {Record<string, string>} */
   const POSTER_MAP = {
@@ -28,88 +42,107 @@
     'box-breathing': '🫁 4s Inhale • Hold • Exhale'
   };
 
+  $: cloudVideoUrl = CLOUD_STORAGE_FILES[id] ? getAppwriteStorageVideoUrl(CLOUD_STORAGE_FILES[id]) : null;
+  $: videoSrc = videoUrl || VIDEO_MAP[id] || cloudVideoUrl;
   $: posterSrc = POSTER_MAP[id] || `/images/stretches/${id}.png`;
   $: motionLabel = MOTION_LABELS[id] || '✨ Follow Stretch Motion';
 </script>
 
 <div class="poster-container {posterOnly ? 'poster-only' : ''} {animateMotion ? 'animated-mode' : ''}">
   <div class="poster-wrapper">
-    <img
-      src={posterSrc}
-      alt="Real men stretch poster guide for {id}"
-      class="poster-img stretch-{id} {animateMotion ? 'active-motion' : ''}"
-    />
-    
-    <!-- Motion Overlay Animations & Target Hotspots -->
-    {#if id === 'neck-tilt'}
-      <div class="motion-overlay neck-tilt-motion">
-        <div class="motion-arc-line neck-arc"></div>
-        <span class="material-symbols-outlined motion-arrow left">arrow_back</span>
-        <span class="hotspot-node neck-node" title="Target: Neck & Upper Traps"></span>
-        <span class="material-symbols-outlined motion-arrow right">arrow_forward</span>
-      </div>
-    {:else if id === 'shoulder-rolls'}
-      <div class="motion-overlay shoulder-rolls-motion">
-        <div class="roll-ring roll-left"></div>
-        <span class="hotspot-node shoulder-left-node"></span>
-        <span class="hotspot-node shoulder-right-node"></span>
-        <div class="roll-ring roll-right"></div>
-      </div>
-    {:else if id === 'seated-twist'}
-      <div class="motion-overlay twist-motion">
-        <span class="material-symbols-outlined twist-icon">sync</span>
-        <span class="hotspot-node spine-node"></span>
-      </div>
-    {:else if id === 'wrist-extension'}
-      <div class="motion-overlay wrist-motion">
-        <span class="material-symbols-outlined pull-icon">arrow_upward</span>
-        <span class="hotspot-node wrist-node"></span>
-      </div>
-    {:else if id === 'hip-opener'}
-      <div class="motion-overlay hip-motion">
-        <span class="material-symbols-outlined hinge-icon">keyboard_arrow_down</span>
-        <span class="hotspot-node hip-node"></span>
-      </div>
-    {:else if id === 'box-breathing'}
-      <div class="motion-overlay breathing-overlay">
-        <div class="breath-ring outer"></div>
-        <div class="breath-ring inner"></div>
-        <span class="breath-tag">4s Box</span>
-      </div>
+    {#if videoSrc && !posterOnly}
+      <video
+        src={videoSrc}
+        autoplay
+        loop
+        muted
+        playsinline
+        controls
+        poster={posterSrc}
+        class="stretch-video stretch-{id}"
+      >
+        <track kind="captions" />
+      </video>
     {:else}
-      <div class="motion-overlay generic-motion">
-        <span class="hotspot-node generic-node"></span>
+      <img
+        src={posterSrc}
+        alt="Real men stretch poster guide for {id}"
+        class="poster-img stretch-{id} {animateMotion ? 'active-motion' : ''}"
+      />
+    {/if}
+    
+    <!-- Motion Overlay Animations & Target Hotspots (Only shown when not playing video) -->
+    {#if !videoSrc || posterOnly}
+      {#if id === 'neck-tilt'}
+        <div class="motion-overlay neck-tilt-motion">
+          <div class="motion-arc-line neck-arc"></div>
+          <span class="material-symbols-outlined motion-arrow left">arrow_back</span>
+          <span class="hotspot-node neck-node" title="Target: Neck & Upper Traps"></span>
+          <span class="material-symbols-outlined motion-arrow right">arrow_forward</span>
+        </div>
+      {:else if id === 'shoulder-rolls'}
+        <div class="motion-overlay shoulder-rolls-motion">
+          <div class="roll-ring roll-left"></div>
+          <span class="hotspot-node shoulder-left-node"></span>
+          <span class="hotspot-node shoulder-right-node"></span>
+          <div class="roll-ring roll-right"></div>
+        </div>
+      {:else if id === 'seated-twist'}
+        <div class="motion-overlay twist-motion">
+          <span class="material-symbols-outlined twist-icon">sync</span>
+          <span class="hotspot-node spine-node"></span>
+        </div>
+      {:else if id === 'wrist-extension'}
+        <div class="motion-overlay wrist-motion">
+          <span class="material-symbols-outlined pull-icon">arrow_upward</span>
+          <span class="hotspot-node wrist-node"></span>
+        </div>
+      {:else if id === 'hip-opener'}
+        <div class="motion-overlay hip-motion">
+          <span class="material-symbols-outlined hinge-icon">keyboard_arrow_down</span>
+          <span class="hotspot-node hip-node"></span>
+        </div>
+      {:else if id === 'box-breathing'}
+        <div class="motion-overlay breathing-overlay">
+          <div class="breath-ring outer"></div>
+          <div class="breath-ring inner"></div>
+          <span class="breath-tag">4s Box</span>
+        </div>
+      {:else}
+        <div class="motion-overlay generic-motion">
+          <span class="hotspot-node generic-node"></span>
+        </div>
+      {/if}
+
+      <!-- Top Badge with Clear Movement Label -->
+      <div class="poster-badge-bar">
+        <div class="poster-badge">
+          <span class="material-symbols-outlined badge-icon">motion_photos_on</span>
+          <span>{motionLabel}</span>
+        </div>
+      </div>
+
+      <!-- Action Controls (Play/Pause Motion & Fullscreen Zoom) -->
+      <div class="poster-controls">
+        <button
+          class="ctrl-btn {animateMotion ? 'active' : ''}"
+          on:click={() => animateMotion = !animateMotion}
+          aria-label="Toggle motion animation"
+          title={animateMotion ? "Pause movement animation" : "Play movement animation"}
+        >
+          <span class="material-symbols-outlined">{animateMotion ? 'pause_circle' : 'play_circle'}</span>
+        </button>
+
+        <button
+          class="ctrl-btn"
+          on:click={() => isZoomed = !isZoomed}
+          aria-label="Toggle full poster preview"
+          title="View full poster"
+        >
+          <span class="material-symbols-outlined">{isZoomed ? 'close' : 'fullscreen'}</span>
+        </button>
       </div>
     {/if}
-
-    <!-- Top Badge with Clear Movement Label -->
-    <div class="poster-badge-bar">
-      <div class="poster-badge">
-        <span class="material-symbols-outlined badge-icon">motion_photos_on</span>
-        <span>{motionLabel}</span>
-      </div>
-    </div>
-
-    <!-- Action Controls (Play/Pause Motion & Fullscreen Zoom) -->
-    <div class="poster-controls">
-      <button
-        class="ctrl-btn {animateMotion ? 'active' : ''}"
-        on:click={() => animateMotion = !animateMotion}
-        aria-label="Toggle motion animation"
-        title={animateMotion ? "Pause movement animation" : "Play movement animation"}
-      >
-        <span class="material-symbols-outlined">{animateMotion ? 'pause_circle' : 'play_circle'}</span>
-      </button>
-
-      <button
-        class="ctrl-btn"
-        on:click={() => isZoomed = !isZoomed}
-        aria-label="Toggle full poster preview"
-        title="View full poster"
-      >
-        <span class="material-symbols-outlined">{isZoomed ? 'close' : 'fullscreen'}</span>
-      </button>
-    </div>
   </div>
 </div>
 
@@ -176,6 +209,14 @@
     object-position: center 20%;
     transition: transform 0.4s ease, filter 0.4s ease;
     will-change: transform;
+  }
+
+  .stretch-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--radius-md, 12px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
   }
 
   .poster-container:hover .poster-img {

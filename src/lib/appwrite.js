@@ -1,4 +1,4 @@
-import { Client, Account, Databases, ID, Query } from "appwrite";
+import { Client, Account, Databases, Storage, ID, Query } from "appwrite";
 
 const APPWRITE_ENDPOINT = "https://fra.cloud.appwrite.io/v1";
 const APPWRITE_PROJECT_ID = "6a5e1ace0000d7425757";
@@ -9,8 +9,10 @@ const client = new Client()
 
 const account = new Account(client);
 const databases = new Databases(client);
+const storage = new Storage(client);
 
 const DATABASE_ID = "6a5e1dd9003a5437c98e";
+const BUCKET_VIDEOS_ID = "6a6af1340022b62d45a4";
 const COLLECTION_PROGRESS_ID = "user_progress";
 
 // Collection IDs mapping
@@ -19,6 +21,25 @@ const COLLECTION_SETTINGS_ID = "settings";
 const COLLECTION_DAILY_LOGS_ID = "daily_logs";
 const COLLECTION_ACHIEVEMENTS_ID = "achievements";
 const COLLECTION_STATISTICS_ID = "statistics";
+
+/**
+ * Gets direct public URL for exercise video stored in Appwrite Storage Bucket
+ * @param {string} fileId
+ * @returns {string}
+ */
+export function getAppwriteStorageVideoUrl(fileId) {
+  return `${APPWRITE_ENDPOINT}/storage/buckets/${BUCKET_VIDEOS_ID}/files/${fileId}/view?project=${APPWRITE_PROJECT_ID}`;
+}
+
+/**
+ * Uploads exercise video to Appwrite Cloud Storage
+ * @param {File} file
+ * @param {string} [customFileId]
+ */
+export async function uploadExerciseVideoToStorage(file, customFileId) {
+  const fileId = customFileId || ID.unique();
+  return await storage.createFile(BUCKET_VIDEOS_ID, fileId, file);
+}
 
 /**
  * Register a new user with Email and Password
@@ -186,5 +207,5 @@ export function subscribeToDatabaseChanges(userId, callback) {
   });
 }
 
-export { client, account, databases, ID, Query, DATABASE_ID, COLLECTION_PROGRESS_ID };
+export { client, account, databases, storage, BUCKET_VIDEOS_ID, ID, Query, DATABASE_ID, COLLECTION_PROGRESS_ID };
 

@@ -1,11 +1,13 @@
 import { writable } from 'svelte/store';
 import { loadState, saveState, resetState as clearStorageState } from '../utils/storage.js';
 import { scheduleStretchReminders, stopScheduler } from '../utils/notifications.js';
-import { getCurrentUser, logoutUser, databases, DATABASE_ID } from '../lib/appwrite.js';
+import { getCurrentUser, logoutUser, databases, DATABASE_ID, Query } from '../lib/appwrite.js';
 import { getAdaptiveInterval } from '../services/scheduler.js';
 import { formatTimelineTime } from '../utils/summaryGenerator.js';
 import { enqueue } from '../sync/queue.js';
 import { processQueue } from '../sync/manager.js';
+import { getLocalDateString } from '../utils/date.js';
+import { mergeProfile, mergeSettings, mergeDailyLogs, mergeAchievements, mergeStatistics } from '../sync/merge.js';
 
 const initialState = loadState();
 export const appStore = writable(initialState);
@@ -27,7 +29,7 @@ async function triggerCloudSync(state) {
   const userId = state?.user?.appwriteId;
   if (!userId) return;
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateString();
 
   // Enqueue profile write
   enqueue('profiles', userId, 'update', {
@@ -130,36 +132,110 @@ export async function checkAndSyncAuth() {
     }));
 
     try {
-      const [remoteStats, remoteSettings] = await Promise.all([
+      const todayStr = getLocalDateString();
+      const dailyLogDocId = `${currentUser.$id}_${todayStr}`;
+
+      const [remoteStats, remoteSettings, remoteProfile, remoteDailyLog, remoteAchievements] = await Promise.all([
         databases.getDocument(DATABASE_ID, 'statistics', currentUser.$id).catch(() => null),
-        databases.getDocument(DATABASE_ID, 'settings', currentUser.$id).catch(() => null)
+        databases.getDocument(DATABASE_ID, 'settings', currentUser.$id).catch(() => null),
+        databases.getDocument(DATABASE_ID, 'profiles', currentUser.$id).catch(() => null),
+        databases.getDocument(DATABASE_ID, 'daily_logs', dailyLogDocId).catch(() => null),
+        databases.listDocuments(DATABASE_ID, 'achievements', [Query.equal('userId', currentUser.$id)]).catch(() => null)
       ]);
 
-      if (remoteStats || remoteSettings) {
-        appStore.update((state) => {
-          const nextProgress = { ...state.progress };
-          if (remoteStats) {
-            nextProgress.totalCompletedBreaks = remoteStats.totalBreaks ?? nextProgress.totalCompletedBreaks;
-            nextProgress.xp = remoteStats.totalXP ?? nextProgress.xp;
-            nextProgress.level = remoteStats.level ?? nextProgress.level;
-            nextProgress.streak = remoteStats.currentStreak ?? nextProgress.streak;
-          }
+      appStore.update((state) => {
+        let nextState = { ...state };
 
-          const nextSettings = { ...state.settings };
-          if (remoteSettings) {
-            nextSettings.reminderIntervalMinutes = remoteSettings.reminderInterval ?? nextSettings.reminderIntervalMinutes;
-            nextSettings.notificationsEnabled = remoteSettings.notificationEnabled ?? nextSettings.notificationsEnabled;
-            nextSettings.largeTextEnabled = remoteSettings.largeText ?? nextSettings.largeTextEnabled;
-            nextSettings.highContrastEnabled = remoteSettings.highContrast ?? nextSettings.highContrastEnabled;
-          }
-
-          return {
-            ...state,
-            progress: nextProgress,
-            settings: nextSettings
+        // 1. Merge Profile
+        if (remoteProfile) {
+          const mergedProfile = mergeProfile(
+            { ...state.user, updatedAt: state.user.updatedAt || 0 },
+            remoteProfile
+          );
+          nextState.user = {
+            ...nextState.user,
+            name: mergedProfile.displayName || mergedProfile.name || nextState.user.name,
+            occupation: mergedProfile.occupation || nextState.user.occupation,
+            language: mergedProfile.language || nextState.user.language
           };
-        });
-      }
+        }
+
+        // 2. Merge Settings
+        if (remoteSettings) {
+          const mergedSettings = mergeSettings(
+            { ...state.settings, updatedAt: state.settings.updatedAt || 0 },
+            {
+              reminderIntervalMinutes: remoteSettings.reminderInterval,
+              notificationsEnabled: remoteSettings.notificationEnabled,
+              largeTextEnabled: remoteSettings.largeText,
+              highContrastEnabled: remoteSettings.highContrast,
+              updatedAt: remoteSettings.updatedAt
+            }
+          );
+          nextState.settings = {
+            ...nextState.settings,
+            ...mergedSettings
+          };
+        }
+
+        // 3. Merge Statistics
+        if (remoteStats) {
+          const mergedStats = mergeStatistics(
+            {
+              totalBreaks: state.progress.totalCompletedBreaks || 0,
+              totalWater: state.progress.water || 0,
+              totalXP: state.progress.xp || 0,
+              level: state.progress.level || 1,
+              currentStreak: state.progress.streak || 1,
+              longestStreak: state.progress.streak || 1
+            },
+            remoteStats
+          );
+          nextState.progress = {
+            ...nextState.progress,
+            totalCompletedBreaks: mergedStats.totalBreaks,
+            xp: mergedStats.totalXP,
+            level: mergedStats.level,
+            streak: mergedStats.currentStreak
+          };
+        }
+
+        // 4. Merge Daily Logs
+        if (remoteDailyLog) {
+          const mergedDaily = mergeDailyLogs(
+            {
+              breaksCompleted: state.progress.completedBreaksToday || 0,
+              breaksSkipped: state.progress.consecutiveSkips || 0,
+              stretchMinutes: (state.progress.completedBreaksToday || 0) * 2,
+              waterCups: state.progress.water || 0,
+              sittingMinutes: 480,
+              wellnessScore: state.progress.score || 100,
+              xpEarned: state.progress.xp || 0,
+              updatedAt: state.progress.updatedAt || 0
+            },
+            remoteDailyLog
+          );
+          nextState.progress = {
+            ...nextState.progress,
+            completedBreaksToday: mergedDaily.breaksCompleted,
+            consecutiveSkips: mergedDaily.breaksSkipped,
+            water: mergedDaily.waterCups,
+            score: mergedDaily.wellnessScore
+          };
+        }
+
+        // 5. Merge Achievements
+        if (remoteAchievements && remoteAchievements.documents) {
+          const remoteBadgeIds = remoteAchievements.documents.map((doc) => doc.badgeId);
+          const mergedBadges = mergeAchievements(state.progress.badges || [], remoteBadgeIds);
+          nextState.progress = {
+            ...nextState.progress,
+            badges: mergedBadges
+          };
+        }
+
+        return nextState;
+      });
     } catch (err) {
       console.warn("Could not load cloud documents on startup:", err);
     }

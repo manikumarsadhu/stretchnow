@@ -7,7 +7,7 @@
   import { startTimer, pauseTimer, resetTimer } from '../utils/timer.js';
   import { STRETCHES } from '../utils/stretches.js';
   import StretchAnimation from '../components/StretchAnimation.svelte';
-  import { playChime } from '../utils/notifications.js';
+  import { playChime, playCelebrationSound } from '../utils/notifications.js';
   import { playRelaxationSound, stopRelaxationSound } from '../utils/sounds.js';
 
   // Break routine: 3 guided poses × 40s = 120s total
@@ -74,7 +74,9 @@
         isCompleted = true;
         stopBreathCycle();
         stopRelaxationSound();
-        if ($appStore.settings?.soundEnabled) playChime();
+        if ($appStore.settings?.soundEnabled) {
+          playCelebrationSound($appStore.settings?.celebrationSound || 'victory');
+        }
         completeBreak(50);
       }
     );
@@ -216,7 +218,7 @@
     <!-- Current Pose Card -->
     <Card padding="md">
       <div class="pose-container">
-        <StretchAnimation id={currentPose.id} />
+        <StretchAnimation id={currentPose.id} videoUrl={currentPose.videoUrl} />
         <div class="pose-header">
           <div class="pose-header-info">
             <h3 class="pose-title">{currentPose.title}</h3>
