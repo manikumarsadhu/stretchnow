@@ -78,6 +78,16 @@
     max-width: 480px;
     margin: 0 auto;
     background: var(--bg-gradient, transparent);
+    width: 100%;
+    min-width: 0;
+  }
+
+  @media (min-width: 768px) {
+    .welcome-screen {
+      max-width: 640px;
+      justify-content: center;
+      padding: 48px 32px;
+    }
   }
 
   .hero-graphic {

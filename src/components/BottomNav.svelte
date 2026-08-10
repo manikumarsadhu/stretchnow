@@ -61,6 +61,12 @@
     overflow: visible;
   }
 
+  @media (min-width: 1024px) {
+    .bottom-nav {
+      display: none !important;
+    }
+  }
+
   .nav-inner {
     background: rgba(255, 255, 255, 0.72);
     backdrop-filter: blur(20px);

@@ -191,13 +191,25 @@
 <style>
   .poster-container {
     width: 100%;
-    height: 220px;
-    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    height: 280px;
+    background: #0f172a;
     border-radius: var(--radius-md, 18px);
     border: 1px solid rgba(255, 255, 255, 0.12);
     overflow: hidden;
     position: relative;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  }
+
+  @media (min-width: 768px) {
+    .poster-container {
+      height: 380px;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .poster-container {
+      height: 440px;
+    }
   }
 
   .poster-container.poster-only {
@@ -219,8 +231,8 @@
   .poster-img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    object-position: center 20%;
+    object-fit: contain;
+    object-position: center top;
     transition: transform 0.4s ease, filter 0.4s ease;
     will-change: transform;
   }
@@ -228,7 +240,8 @@
   .stretch-video {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    background: #0f172a;
     border-radius: var(--radius-md, 12px);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
   }

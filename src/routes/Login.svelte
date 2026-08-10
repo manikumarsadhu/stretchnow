@@ -154,6 +154,16 @@
     flex-direction: column;
     box-sizing: border-box;
     background: var(--bg-gradient, transparent);
+    width: 100%;
+    min-width: 0;
+  }
+
+  @media (min-width: 768px) {
+    .login-screen {
+      max-width: 580px;
+      justify-content: center;
+      padding: 48px 32px;
+    }
   }
 
   .header {

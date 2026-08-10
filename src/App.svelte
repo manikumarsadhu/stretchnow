@@ -14,14 +14,19 @@
   import Settings from './routes/Settings.svelte';
   import NotFound from './routes/NotFound.svelte';
   import BottomNav from './components/BottomNav.svelte';
+  import SidebarNav from './components/SidebarNav.svelte';
+  import DesktopHeader from './components/DesktopHeader.svelte';
   import AlarmModal from './components/AlarmModal.svelte';
   import SnoozeBanner from './components/SnoozeBanner.svelte';
   import AdaptiveIntervalModal from './components/AdaptiveIntervalModal.svelte';
+  import HealthChatbotModal from './components/HealthChatbotModal.svelte';
   import { closeAdaptiveModal } from './stores/app.js';
   import { getRouteMetadata } from './lib/seo.js';
   import { getStructuredDataJSON } from './lib/structuredData.js';
 
-  onMount(async () => {
+  let isChatbotOpen = false;
+
+  onMount(() => {
     // Start background operational sync loops
     initSyncManager();
     // Ping Appwrite backend server on startup to verify setup
@@ -31,18 +36,12 @@
       });
     }
 
-    const startTime = Date.now();
-
-    // Check for existing Appwrite user session and sync progress
-    try {
-      await checkAndSyncAuth();
-    } catch (err) {
+    // Trigger auth sync in background so network latency never blocks UI startup
+    checkAndSyncAuth().catch((err) => {
       console.warn('Startup auth sync error:', err);
-    }
+    });
 
-    const elapsed = Date.now() - startTime;
     const minSplashTime = 800;
-    const remainingDelay = Math.max(0, minSplashTime - elapsed);
 
     setTimeout(() => {
       // If returning from OAuth login redirect (e.g. ?auth=success)
@@ -51,14 +50,9 @@
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
-      // Route dynamically depending on user onboarding or cloud connection state
-      const state = $appStore;
-      if (state.user?.appwriteId || state.user?.onboarded) {
-        navigateTo('home');
-      } else {
-        navigateTo('welcome');
-      }
-    }, remainingDelay);
+      // Default to home page on startup
+      navigateTo('home');
+    }, minSplashTime);
   });
 
   $: route = $appStore.route || 'splash';
@@ -68,6 +62,9 @@
   let systemPrefersDark = false;
   onMount(() => {
     if (typeof window !== 'undefined') {
+      const handleOpenChatbot = () => { isChatbotOpen = true; };
+      window.addEventListener('open-chatbot', handleOpenChatbot);
+
       const mq = window.matchMedia('(prefers-color-scheme: dark)');
       systemPrefersDark = mq.matches;
       /** @param {MediaQueryListEvent} e */
@@ -75,7 +72,10 @@
         systemPrefersDark = e.matches;
       };
       mq.addEventListener('change', listener);
-      return () => mq.removeEventListener('change', listener);
+      return () => {
+        window.removeEventListener('open-chatbot', handleOpenChatbot);
+        mq.removeEventListener('change', listener);
+      };
     }
   });
 
@@ -102,29 +102,39 @@
 </svelte:head>
 
 <div class="app-shell {computedDark ? 'dark-mode' : ''} {themeClass} {largeTextClass} {highContrastClass}">
-  <main class="main-content">
-    {#if route === 'splash'}
-      <Splash />
-    {:else if route === 'welcome'}
-      <Welcome />
-    {:else if route === 'onboarding'}
-      <Onboarding />
-    {:else if route === 'login'}
-      <Login />
-    {:else if route === 'home'}
-      <Home />
-    {:else if route === 'break'}
-      <Break />
-    {:else if route === 'library'}
-      <Library />
-    {:else if route === 'statistics'}
-      <Statistics />
-    {:else if route === 'settings'}
-      <Settings />
-    {:else}
-      <NotFound />
+  {#if showBottomNav}
+    <SidebarNav />
+  {/if}
+
+  <div class="app-content-wrapper">
+    {#if showBottomNav}
+      <DesktopHeader />
     {/if}
-  </main>
+
+    <main class="main-content">
+      {#if route === 'splash'}
+        <Splash />
+      {:else if route === 'welcome'}
+        <Welcome />
+      {:else if route === 'onboarding'}
+        <Onboarding />
+      {:else if route === 'login'}
+        <Login />
+      {:else if route === 'home'}
+        <Home />
+      {:else if route === 'break'}
+        <Break />
+      {:else if route === 'library'}
+        <Library />
+      {:else if route === 'statistics'}
+        <Statistics />
+      {:else if route === 'settings'}
+        <Settings />
+      {:else}
+        <NotFound />
+      {/if}
+    </main>
+  </div>
 
   {#if showBottomNav}
     <BottomNav />
@@ -136,23 +146,93 @@
     <AlarmModal />
   {/if}
 
+  {#if showBottomNav}
+    <button
+      type="button"
+      class="floating-chatbot-btn"
+      on:click={() => isChatbotOpen = true}
+      title="Ask AI Health Assistant"
+      aria-label="Open AI Health Assistant"
+    >
+      <span class="material-symbols-outlined chat-icon">smart_toy</span>
+      <span class="chat-badge">AI Assistant</span>
+    </button>
+
+    <HealthChatbotModal isOpen={isChatbotOpen} onclose={() => isChatbotOpen = false} />
+  {/if}
+
   {#if $appStore.showAdaptiveModal}
     <AdaptiveIntervalModal isOpen={true} onclose={closeAdaptiveModal} />
   {/if}
 </div>
 
 <style>
+  .floating-chatbot-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 99px;
+    background: linear-gradient(135deg, var(--primary, #6366f1) 0%, var(--color-ai, #8b5cf6) 100%);
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+    transition: all var(--anim-card, 0.25s ease);
+    margin: 0 !important;
+  }
+
+  .floating-chatbot-btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 12px 30px rgba(99, 102, 241, 0.5);
+  }
+
+  .chat-icon {
+    font-size: 22px;
+  }
+
+  .chat-badge {
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  @media (max-width: 1023px) {
+    .floating-chatbot-btn {
+      bottom: 96px;
+      right: 16px;
+      padding: 10px 14px;
+    }
+    .chat-badge {
+      display: none;
+    }
+  }
   .app-shell {
     min-height: 100vh;
     background-color: #f8fafc;
     color: #0f172a;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     transition: background-color 0.3s ease, color 0.3s ease;
+    display: block;
+    width: 100%;
+    overflow-x: hidden;
   }
 
   .app-shell.dark-mode {
     background-color: #0f172a;
     color: #f8fafc;
+  }
+
+  .app-content-wrapper {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
   }
 
   .main-content {
@@ -162,5 +242,35 @@
     min-height: 100vh;
     position: relative;
     box-sizing: border-box;
+    min-width: 0;
+  }
+
+  /* Desktop App Shell (>= 1024px) */
+  @media (min-width: 1024px) {
+    .app-shell {
+      display: block;
+      min-height: 100vh;
+      width: 100%;
+    }
+
+    .app-content-wrapper {
+      margin-left: 260px;
+      width: calc(100% - 260px);
+      min-width: 0;
+    }
+
+    .main-content {
+      max-width: 100%;
+      margin: 0;
+      min-height: calc(100vh - 73px);
+    }
+  }
+
+  /* Tablet layout adjustment (768px - 1023px) */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .main-content {
+      max-width: 94%;
+      margin: 0 auto;
+    }
   }
 </style>

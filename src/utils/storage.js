@@ -11,7 +11,7 @@ export const DEFAULT_STATE = {
     workEnd: '17:00',
     dailyBreakGoal: 6,
     dailyWaterGoal: 8,
-    onboarded: false
+    onboarded: true
   },
   settings: {
     soundEnabled: true,

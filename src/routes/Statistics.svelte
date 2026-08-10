@@ -147,6 +147,27 @@
     gap: 18px;
     box-sizing: border-box;
     background: var(--bg-gradient, transparent);
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Tablet & Desktop Layout */
+  @media (min-width: 768px) {
+    .stats-screen {
+      max-width: 1440px;
+      padding: 28px 32px 100px;
+      gap: 24px;
+    }
+
+    .charts-container {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 20px !important;
+    }
+
+    .monthly-report-grid {
+      grid-template-columns: repeat(4, 1fr) !important;
+    }
   }
 
   .title {

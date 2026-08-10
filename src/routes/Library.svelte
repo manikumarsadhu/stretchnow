@@ -213,6 +213,34 @@
     padding: 16px 16px 100px;
     max-width: 480px;
     margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+  }
+
+  /* Tablet & Desktop Layouts */
+  @media (min-width: 768px) {
+    .library-screen {
+      max-width: 1440px;
+      padding: 24px 32px 100px;
+      gap: 20px;
+    }
+
+    .stretches-grid {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+      gap: 16px !important;
+    }
+
+    .qs-inner {
+      flex-direction: row !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+    }
+
+    .qs-btn-wrap {
+      width: auto !important;
+    }
   }
 
   .header {

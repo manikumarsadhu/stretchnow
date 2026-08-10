@@ -372,6 +372,89 @@
     margin: 0 auto;
     width: 100%;
     box-sizing: border-box;
+    min-width: 0;
+  }
+
+  /* Tablet Responsive Layout (768px - 1023px) */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .home-screen {
+      max-width: 100%;
+      padding: 20px 24px 100px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-areas:
+        "header header"
+        "hero wellness"
+        "aicoach aicoach"
+        "timeline quickactions";
+      gap: 20px;
+    }
+
+    .top-header { grid-area: header; }
+    .hero-section { grid-area: hero; }
+    .wellness-section { grid-area: wellness; }
+    .ai-coach-section { grid-area: aicoach; }
+    .timeline-section { grid-area: timeline; }
+    .quick-actions-bar { grid-area: quickactions; }
+
+    .hero-card-inner {
+      padding: 16px;
+    }
+  }
+
+  /* Desktop Responsive Dashboard (>= 1024px) */
+  @media (min-width: 1024px) {
+    .top-header {
+      display: none !important;
+    }
+
+    .home-screen {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 28px 32px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(340px, 1fr);
+      grid-template-areas:
+        "hero wellness"
+        "aicoach aicoach"
+        "timeline quickactions";
+      gap: 24px;
+    }
+
+    .hero-section { grid-area: hero; }
+    .wellness-section { grid-area: wellness; }
+    .ai-coach-section { grid-area: aicoach; }
+    .timeline-section { grid-area: timeline; }
+    .quick-actions-bar {
+      grid-area: quickactions;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 12px;
+    }
+
+    .qa-pill {
+      padding: 14px 16px;
+      font-size: 0.9rem;
+      justify-content: flex-start;
+    }
+
+    .hero-card-inner {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      text-align: left;
+      padding: 16px 20px;
+    }
+
+    .hero-countdown {
+      margin: 4px 0;
+      font-size: 3.2rem;
+    }
+
+    .hero-cta-wrap {
+      width: auto;
+      min-width: 180px;
+    }
   }
 
   /* Header */

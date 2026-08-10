@@ -306,6 +306,16 @@
     flex-direction: column;
     box-sizing: border-box;
     background: var(--bg-gradient, transparent);
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Desktop & Tablet Session Layout */
+  @media (min-width: 768px) {
+    .break-screen {
+      max-width: 1200px;
+      padding: 28px 32px 100px;
+    }
   }
 
   /* ── Top Bar ── */

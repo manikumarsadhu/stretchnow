@@ -696,6 +696,23 @@
     gap: 18px;
     box-sizing: border-box;
     background: var(--bg-gradient, transparent);
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Tablet & Desktop Settings Layout */
+  @media (min-width: 768px) {
+    .settings-screen {
+      max-width: 1440px;
+      padding: 28px 32px 100px;
+      display: grid !important;
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 24px !important;
+    }
+
+    .header-section, .header, .title, .subtitle {
+      grid-column: 1 / -1;
+    }
   }
 
   .title {
