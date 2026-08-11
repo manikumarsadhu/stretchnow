@@ -71,6 +71,15 @@
     });
   }
 
+  function updateChart() {
+    if (!chartInstance) return;
+    chartInstance.data.labels = labels;
+    chartInstance.data.datasets[0].data = data;
+    chartInstance.data.datasets[0].label = title;
+    chartInstance.data.datasets[0].borderColor = color;
+    chartInstance.update('none'); // smooth update without full animation rebuild
+  }
+
   onMount(() => {
     renderChart();
   });
@@ -78,11 +87,12 @@
   onDestroy(() => {
     if (chartInstance) {
       chartInstance.destroy();
+      chartInstance = null;
     }
   });
 
-  $: if (chartInstance && (data || labels || color)) {
-    renderChart();
+  $: if (chartInstance && (data || labels || color || title)) {
+    updateChart();
   }
 </script>
 

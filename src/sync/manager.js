@@ -1,6 +1,6 @@
 import { syncState, lastSyncTime } from './status.js';
 import { getQueue, removeOperation, incrementRetry } from './queue.js';
-import { databases, DATABASE_ID } from '../lib/appwrite.js';
+import { databases, DATABASE_ID, isCollectionNotFoundError } from '../lib/appwrite.js';
 
 // Sync concurrency lock
 let isSyncing = false;
@@ -30,10 +30,46 @@ export function initSyncManager() {
 }
 
 /**
- * Processes queued database transactions sequentially.
+ * Groups and batches pending queue operations targeting the same document into a single merged payload.
+ * @param {Array} operations
+ * @returns {Array}
+ */
+export function batchOperations(operations) {
+  if (!operations || operations.length <= 1) {
+    return operations.map(op => ({ ...op, opIds: [op.id] }));
+  }
+
+  const batchedMap = new Map();
+  const batchedList = [];
+
+  for (const op of operations) {
+    const key = `${op.collection}:${op.documentId}`;
+    if (op.operation === 'update' && batchedMap.has(key)) {
+      const existing = batchedMap.get(key);
+      existing.payload = {
+        ...existing.payload,
+        ...op.payload
+      };
+      existing.opIds.push(op.id);
+      existing.timestamp = Math.max(existing.timestamp, op.timestamp || 0);
+    } else {
+      const batchedOp = {
+        ...op,
+        opIds: [op.id]
+      };
+      batchedMap.set(key, batchedOp);
+      batchedList.push(batchedOp);
+    }
+  }
+
+  return batchedList;
+}
+
+/**
+ * Processes queued database transactions with batch deduplication.
  */
 export async function processQueue() {
-  if (isSyncing) return; // Prevent concurrent loops
+  if (isSyncing) return; // Prevent concurrent sync loops
   
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     syncState.set('OFFLINE');
@@ -49,22 +85,32 @@ export async function processQueue() {
   isSyncing = true;
   syncState.set('SYNCING');
 
-  // Process operations sequentially
-  for (const op of queueObj.operations) {
+  // Deduplicate and batch operations per document before making API calls
+  const batchedOps = batchOperations([...queueObj.operations]);
+  let _processedCount = 0;
+
+  for (const op of batchedOps) {
     let success = false;
     try {
-      // Execute the database write to Appwrite collections
+      // Execute 1 batched database write per document
       await databases.updateDocument(
         DATABASE_ID,
-        op.collection, // Collection ID (e.g. 'daily_logs')
-        op.documentId, // Document ID (e.g. 'userId_date')
-        op.payload     // Partial update payload
+        op.collection,
+        op.documentId,
+        op.payload
       );
       success = true;
     } catch (err) {
-      console.warn(`Sync operation ${op.id} failed:`, err);
+      if (isCollectionNotFoundError(err)) {
+        console.warn(`[Appwrite Sync] Collection '${op.collection}' does not exist in Database '${DATABASE_ID}'. Dequeuing operations.`);
+        op.opIds.forEach(id => removeOperation(id));
+        _processedCount++;
+        continue;
+      }
+
+      console.warn(`Sync operation for ${op.documentId} failed:`, err);
       
-      // If doc is missing (404), try creating it first
+      // If doc is missing (404), try creating it with batched payload
       if (/** @type {any} */(err)?.code === 404) {
         try {
           await databases.createDocument(
@@ -75,28 +121,34 @@ export async function processQueue() {
           );
           success = true;
         } catch (createErr) {
-          console.error(`Document creation failed for ${op.id}:`, createErr);
+          if (isCollectionNotFoundError(createErr)) {
+            console.warn(`[Appwrite Sync] Collection '${op.collection}' does not exist. Dequeuing operations.`);
+            op.opIds.forEach(id => removeOperation(id));
+            _processedCount++;
+            continue;
+          }
+          console.error(`Document creation failed for ${op.documentId}:`, createErr);
         }
       }
     }
 
     if (success) {
-      removeOperation(op.id);
+      // Mark all coalesced operations as completed and remove from queue
+      op.opIds.forEach(id => removeOperation(id));
+      _processedCount++;
     } else {
-      incrementRetry(op.id);
-      const updatedOp = getQueue().operations.find(o => o.id === op.id);
+      op.opIds.forEach(id => incrementRetry(id));
+      const updatedOp = getQueue().operations.find(o => op.opIds.includes(o.id));
       const retryCount = updatedOp ? updatedOp.retryCount : 1;
 
       if (retryCount >= 4) {
-        // Exceeded maximum retries (4 attempts)
-        console.error(`Operation ${op.id} exceeded retry limits. Sync failed.`);
+        console.error(`Operation for ${op.documentId} exceeded retry limits. Sync failed.`);
         syncState.set('FAILED');
         isSyncing = false;
         return;
       } else {
-        // Schedule retry with exponential backoff
         const delay = BACKOFF_DELAYS[retryCount - 1] || 2000;
-        console.log(`Scheduling retry for ${op.id} in ${delay}ms (Attempt #${retryCount})`);
+        console.log(`Scheduling retry for ${op.documentId} in ${delay}ms (Attempt #${retryCount})`);
         syncState.set('RETRYING');
         isSyncing = false;
 
@@ -109,13 +161,19 @@ export async function processQueue() {
   }
 
   // Complete processing
-  lastSyncTime.set(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-  syncState.set('IDLE');
+  const remainingOps = getQueue().operations;
+  if (remainingOps.length === 0) {
+    lastSyncTime.set(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    syncState.set('IDLE');
+  } else {
+    syncState.set('PENDING_CHANGES');
+  }
   isSyncing = false;
 
   // Double check if any new transactions were enqueued during sync
   const finalCheck = getQueue();
-  if (finalCheck.operations.length > 0) {
+  if (finalCheck.operations.length > 0 && finalCheck.operations.length !== remainingOps.length) {
     processQueue();
   }
 }
+

@@ -1,6 +1,8 @@
+import { LocalRepository } from '../storage/LocalRepository.js';
+
 /**
  * Persistent Operational Transaction Queue for StretchNow.
- * Stores sync operations in localStorage to survive browser reloads or crashes.
+ * Stores sync operations via LocalRepository abstraction layer.
  */
 
 const QUEUE_KEY = 'stretchnow_sync_queue';
@@ -11,9 +13,8 @@ export function getQueue() {
     return { version: QUEUE_VERSION, createdAt: new Date().toISOString(), operations: [] };
   }
   try {
-    const raw = localStorage.getItem(QUEUE_KEY);
-    if (!raw) return { version: QUEUE_VERSION, createdAt: new Date().toISOString(), operations: [] };
-    const parsed = JSON.parse(raw);
+    const parsed = LocalRepository.get(QUEUE_KEY);
+    if (!parsed) return { version: QUEUE_VERSION, createdAt: new Date().toISOString(), operations: [] };
     if (parsed.version !== QUEUE_VERSION) {
       // Version mismatch fallback / migration
       return { version: QUEUE_VERSION, createdAt: new Date().toISOString(), operations: [] };
@@ -27,7 +28,7 @@ export function getQueue() {
 export function saveQueue(queueObj) {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(queueObj));
+    LocalRepository.set(QUEUE_KEY, queueObj);
   } catch (err) {
     console.error('Failed to save operational sync queue:', err);
   }

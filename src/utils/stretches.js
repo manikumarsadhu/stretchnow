@@ -1,6 +1,7 @@
 import neckVideo from '../media/neck excercise video.mp4';
 import shoulderRollsVideo from '../media/shoulder_rolls.mp4';
 import seatedSpinalVideo from '../media/seated_spinal.mp4';
+import { getAppwriteStorageVideoUrl } from '../lib/appwrite.js';
 
 export const STRETCH_CATEGORIES = [
   { id: 'all', label: 'All Routines', icon: 'apps' },
@@ -212,6 +213,32 @@ export const STRETCHES = [
     tips: 'Calms mind chatter and lowers cortisol during intense work hours.'
   }
 ];
+
+/**
+ * Resolves the video source URL for a given exercise object or exercise ID.
+ * Abstracts storage location (local asset, CDN, or cloud storage) away from UI components.
+ * @param {Object|string} exercise
+ * @returns {string|null}
+ */
+export function getExerciseVideoUrl(exercise) {
+  if (!exercise) return null;
+  
+  const poseObj = typeof exercise === 'string'
+    ? STRETCHES.find((s) => s.id === exercise)
+    : exercise;
+
+  if (!poseObj) return null;
+  
+  // 1. Direct configured video URL (local import, CDN, or Cloudfront URL)
+  if (poseObj.videoUrl) return poseObj.videoUrl;
+
+  // 2. Appwrite Cloud Storage fallback using file ID if provided
+  if (poseObj.appwriteStorageFileId) {
+    return getAppwriteStorageVideoUrl(poseObj.appwriteStorageFileId);
+  }
+
+  return null;
+}
 
 export function getStretchesByCategory(category = 'all') {
   if (category === 'all') return STRETCHES;

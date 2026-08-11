@@ -1,7 +1,25 @@
 import { writable } from 'svelte/store';
 import { loadState, saveState, resetState as clearStorageState } from '../utils/storage.js';
 import { scheduleStretchReminders, stopScheduler, startAlarmRinging, stopAlarmRinging } from '../utils/notifications.js';
-import { getCurrentUser, logoutUser, databases, DATABASE_ID, Query } from '../lib/appwrite.js';
+import {
+  getCurrentUser,
+  logoutUser,
+  databases,
+  DATABASE_ID,
+  Query,
+  subscribeToDatabaseChanges,
+  syncUserProgress,
+  syncProfile,
+  syncSettings,
+  syncStatistics,
+  syncDailyLog,
+  COLLECTION_PROGRESS_ID,
+  COLLECTION_PROFILES_ID,
+  COLLECTION_SETTINGS_ID,
+  COLLECTION_DAILY_LOGS_ID,
+  COLLECTION_ACHIEVEMENTS_ID,
+  COLLECTION_STATISTICS_ID
+} from '../lib/appwrite.js';
 import { getAdaptiveInterval } from '../services/scheduler.js';
 import { formatTimelineTime } from '../utils/summaryGenerator.js';
 import { enqueue } from '../sync/queue.js';
@@ -31,8 +49,16 @@ async function triggerCloudSync(state) {
 
   const todayStr = getLocalDateString();
 
+  // Enqueue user_progress write (matches Appwrite user_progress table)
+  enqueue(COLLECTION_PROGRESS_ID, userId, 'update', {
+    water: state.progress.water || 0,
+    completedBreaksToday: state.progress.completedBreaksToday || 0,
+    score: state.progress.score || 100,
+    streak: state.progress.streak || 1
+  });
+
   // Enqueue profile write
-  enqueue('profiles', userId, 'update', {
+  enqueue(COLLECTION_PROFILES_ID, userId, 'update', {
     userId,
     displayName: state.user.name || 'Friend',
     email: state.user.email || '',
@@ -42,7 +68,7 @@ async function triggerCloudSync(state) {
   });
 
   // Enqueue settings write
-  enqueue('settings', userId, 'update', {
+  enqueue(COLLECTION_SETTINGS_ID, userId, 'update', {
     reminderInterval: state.settings.reminderIntervalMinutes || 45,
     workStart: state.user.workStart || '09:00',
     workEnd: state.user.workEnd || '17:00',
@@ -58,7 +84,7 @@ async function triggerCloudSync(state) {
   });
 
   // Enqueue daily logs write
-  enqueue('daily_logs', `${userId}_${todayStr}`, 'update', {
+  enqueue(COLLECTION_DAILY_LOGS_ID, `${userId}_${todayStr}`, 'update', {
     userId,
     date: todayStr,
     breaksCompleted: state.progress.completedBreaksToday || 0,
@@ -74,7 +100,7 @@ async function triggerCloudSync(state) {
   });
 
   // Enqueue statistics write
-  enqueue('statistics', userId, 'update', {
+  enqueue(COLLECTION_STATISTICS_ID, userId, 'update', {
     totalBreaks: state.progress.totalCompletedBreaks || 0,
     totalWater: state.progress.water || 0,
     totalXP: state.progress.xp || 0,
@@ -117,6 +143,8 @@ export function updateProfile(userData) {
   });
 }
 
+let realtimeUnsubscribe = null;
+
 export async function checkAndSyncAuth() {
   const currentUser = await getCurrentUser();
   if (currentUser) {
@@ -131,20 +159,57 @@ export async function checkAndSyncAuth() {
       }
     }));
 
+    // Setup Realtime WebSocket Listener if not active
+    if (!realtimeUnsubscribe) {
+      try {
+        realtimeUnsubscribe = subscribeToDatabaseChanges(currentUser.$id, (response) => {
+          const payload = response.payload;
+          if (!payload) return;
+          appStore.update((state) => {
+            const nextState = { ...state };
+            if (payload.water !== undefined || payload.completedBreaksToday !== undefined) {
+              nextState.progress = {
+                ...nextState.progress,
+                water: payload.water ?? nextState.progress.water,
+                completedBreaksToday: payload.completedBreaksToday ?? nextState.progress.completedBreaksToday,
+                score: payload.score ?? nextState.progress.score,
+                streak: payload.streak ?? nextState.progress.streak
+              };
+            }
+            return nextState;
+          });
+        });
+      } catch (subErr) {
+        console.warn("[Appwrite Realtime] Subscription error:", subErr);
+      }
+    }
+
     try {
       const todayStr = getLocalDateString();
       const dailyLogDocId = `${currentUser.$id}_${todayStr}`;
 
-      const [remoteStats, remoteSettings, remoteProfile, remoteDailyLog, remoteAchievements] = await Promise.all([
-        databases.getDocument(DATABASE_ID, 'statistics', currentUser.$id).catch(() => null),
-        databases.getDocument(DATABASE_ID, 'settings', currentUser.$id).catch(() => null),
-        databases.getDocument(DATABASE_ID, 'profiles', currentUser.$id).catch(() => null),
-        databases.getDocument(DATABASE_ID, 'daily_logs', dailyLogDocId).catch(() => null),
-        databases.listDocuments(DATABASE_ID, 'achievements', [Query.equal('userId', currentUser.$id)]).catch(() => null)
+      const [remoteProgress, remoteStats, remoteSettings, remoteProfile, remoteDailyLog, remoteAchievements] = await Promise.all([
+        databases.getDocument(DATABASE_ID, COLLECTION_PROGRESS_ID, currentUser.$id).catch(() => null),
+        databases.getDocument(DATABASE_ID, COLLECTION_STATISTICS_ID, currentUser.$id).catch(() => null),
+        databases.getDocument(DATABASE_ID, COLLECTION_SETTINGS_ID, currentUser.$id).catch(() => null),
+        databases.getDocument(DATABASE_ID, COLLECTION_PROFILES_ID, currentUser.$id).catch(() => null),
+        databases.getDocument(DATABASE_ID, COLLECTION_DAILY_LOGS_ID, dailyLogDocId).catch(() => null),
+        databases.listDocuments(DATABASE_ID, COLLECTION_ACHIEVEMENTS_ID, [Query.equal('userId', currentUser.$id)]).catch(() => null)
       ]);
 
       appStore.update((state) => {
         let nextState = { ...state };
+
+        // 0. Merge User Progress (from user_progress collection)
+        if (remoteProgress) {
+          nextState.progress = {
+            ...nextState.progress,
+            water: remoteProgress.water ?? nextState.progress.water,
+            completedBreaksToday: remoteProgress.completedBreaksToday ?? nextState.progress.completedBreaksToday,
+            score: remoteProgress.score ?? nextState.progress.score,
+            streak: remoteProgress.streak ?? nextState.progress.streak
+          };
+        }
 
         // 1. Merge Profile
         if (remoteProfile) {
@@ -234,6 +299,13 @@ export async function checkAndSyncAuth() {
           };
         }
 
+        // If first-time user on Appwrite Cloud (remote documents missing), perform initial sync write
+        if (!remoteProgress) syncUserProgress(currentUser.$id, nextState.progress).catch(() => {});
+        if (!remoteProfile) syncProfile(currentUser.$id, nextState.user).catch(() => {});
+        if (!remoteSettings) syncSettings(currentUser.$id, nextState.settings).catch(() => {});
+        if (!remoteStats) syncStatistics(currentUser.$id, nextState.statistics).catch(() => {});
+        if (!remoteDailyLog) syncDailyLog(currentUser.$id, todayStr, nextState.progress).catch(() => {});
+
         return nextState;
       });
     } catch (err) {
@@ -243,6 +315,14 @@ export async function checkAndSyncAuth() {
 }
 
 export async function logoutAppwriteSession() {
+  if (realtimeUnsubscribe) {
+    try {
+      realtimeUnsubscribe();
+    } catch (err) {
+      console.warn("Error unsubscribing realtime listener during logout:", err);
+    }
+    realtimeUnsubscribe = null;
+  }
   await logoutUser();
   appStore.update((state) => ({
     ...state,

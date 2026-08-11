@@ -1,4 +1,5 @@
 import { getLocalDateString, getYesterdayLocalDateString } from './date.js';
+import { LocalRepository } from '../storage/LocalRepository.js';
 
 const STORAGE_KEY = 'stretchnow_v1_data';
 
@@ -63,9 +64,8 @@ export const DEFAULT_STATE = {
 
 export function loadState() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...DEFAULT_STATE };
-    const parsed = JSON.parse(raw);
+    const parsed = LocalRepository.get(STORAGE_KEY);
+    if (!parsed) return { ...DEFAULT_STATE };
     
     // Check if day changed to reset daily counters
     const today = getLocalDateString();
@@ -108,7 +108,7 @@ export function saveState(state) {
       progress: state.progress,
       statistics: state.statistics
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    LocalRepository.set(STORAGE_KEY, toSave);
   } catch (err) {
     console.error('Error saving StretchNow storage:', err);
   }
@@ -116,7 +116,7 @@ export function saveState(state) {
 
 export function resetState() {
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    LocalRepository.remove(STORAGE_KEY);
   } catch (err) {
     console.error('Error resetting StretchNow storage:', err);
   }
