@@ -1,0 +1,26 @@
+name: Keep Appwrite Project Active
+
+on:
+  schedule:
+    # Runs every 3 days at 00:00 UTC to keep Appwrite Cloud active
+    - cron: '0 0 */3 * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  ping-appwrite:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Appwrite Project API
+        run: |
+          RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" \
+            -H "X-Appwrite-Project: 6a5e1ace0000d7425757" \
+            https://fra.cloud.appwrite.io/v1/ping)
+          
+          echo "Appwrite Response:"
+          echo "$RESPONSE"
+          
+          if echo "$RESPONSE" | grep -q "HTTP_CODE:200"; then
+            echo "Successfully pinged Appwrite. Project is active!"
+          else
+            echo "Warning: Received non-200 status code from Appwrite."
+          fi
