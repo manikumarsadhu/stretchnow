@@ -51,6 +51,55 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+  <!-- Structured Data (JSON-LD) for Search Engine Rich Results -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://stretchnow.vercel.app/#organization",
+        "name": "StretchNow",
+        "url": "https://stretchnow.vercel.app/",
+        "logo": "https://stretchnow.vercel.app/icon-512.png",
+        "description": "Creator of ergonomic stretching and wellness tools for remote workers and office professionals."
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://stretchnow.vercel.app/#website",
+        "url": "https://stretchnow.vercel.app/",
+        "name": "StretchNow",
+        "publisher": {
+          "@id": "https://stretchnow.vercel.app/#organization"
+        },
+        "inLanguage": "en-US"
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://stretchnow.vercel.app/#webapp",
+        "url": "https://stretchnow.vercel.app/",
+        "name": "StretchNow",
+        "applicationCategory": "HealthApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "StretchNow helps developers, office workers, and remote employees stay healthy with desk stretch reminders, water intake tracking, posture guidance, and wellness insights.",
+        "featureList": [
+          "Desk stretch reminders & timer",
+          "Water intake tracking & daily goals",
+          "Posture & ergonomic stretch library",
+          "Habit analytics & streak tracking",
+          "Offline PWA support & cloud sync"
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 
 <body>

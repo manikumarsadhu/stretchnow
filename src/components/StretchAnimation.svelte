@@ -36,7 +36,7 @@
   let videoElement = null;
 
   $: videoSrc = videoUrl || getExerciseVideoUrl(id);
-  $: posterSrc = POSTER_MAP[id] || `/images/stretches/${id}.png`;
+  $: posterSrc = POSTER_MAP[id] || (id ? `/images/stretches/${id}.png` : '');
   $: motionLabel = MOTION_LABELS[id] || '✨ Follow Stretch Motion';
 
   $: if (videoElement && videoSrc) {
@@ -54,12 +54,12 @@
         loop
         muted
         playsinline
-        poster={posterSrc}
+        poster={posterSrc || undefined}
         class="stretch-video stretch-{id}"
       >
         <track kind="captions" />
       </video>
-    {:else}
+    {:else if posterSrc}
       <img
         src={posterSrc}
         alt="Real men stretch poster guide for {id}"

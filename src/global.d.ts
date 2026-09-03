@@ -1,3 +1,5 @@
+/// <reference types="vite-plugin-pwa/client" />
+
 /**
  * Global type definitions for StretchNow web application.
  * Extends standard DOM types where TypeScript lib definitions are incomplete.

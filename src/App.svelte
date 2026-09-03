@@ -22,7 +22,6 @@
   import HealthChatbotModal from './components/HealthChatbotModal.svelte';
   import { closeAdaptiveModal } from './stores/app.js';
   import { getRouteMetadata } from './lib/seo.js';
-  import { getStructuredDataJSON } from './lib/structuredData.js';
 
   let isChatbotOpen = false;
 
@@ -89,16 +88,11 @@
 
   // Dynamic SEO metadata per route
   $: meta = getRouteMetadata(route);
-  // eslint-disable-next-line no-unused-vars
-  const structuredDataJson = getStructuredDataJSON();
 </script>
 
 <svelte:head>
   <title>{meta.title}</title>
   <meta name="description" content={meta.description} />
-  <script type="application/ld+json">
-    {@html structuredDataJson}
-  </script>
 </svelte:head>
 
 <div class="app-shell {computedDark ? 'dark-mode' : ''} {themeClass} {largeTextClass} {highContrastClass}">
