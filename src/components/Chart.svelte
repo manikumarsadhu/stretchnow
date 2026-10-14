@@ -63,8 +63,9 @@
           },
           y: {
             beginAtZero: true,
+            suggestedMax: unit === '%' ? 100 : (unit === 'breaks' ? 6 : (unit === 'cups' ? 8 : (unit === 'hrs' ? 8 : undefined))),
             grid: { color: 'rgba(226, 232, 240, 0.5)' },
-            ticks: { font: { size: 11 }, color: '#94a3b8' }
+            ticks: { font: { size: 11 }, color: '#94a3b8', precision: unit === 'hrs' ? 1 : 0 }
           }
         } : {}
       }

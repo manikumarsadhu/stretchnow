@@ -29,6 +29,7 @@
   let focusMode = false;
   let isSummaryOpen = false;
   let isNotificationCenterOpen = false;
+  $: unreadCount = ($appStore?.notifications || []).filter((n) => n.unread).length;
   /** @type {ReturnType<typeof setTimeout> | null} */
   let undoTimeout = null;
 
@@ -150,7 +151,7 @@
   <!-- ── 1. DYNAMIC HEADER & GREETING ── -->
   <header class="top-header">
     <div class="user-greeting">
-      <h1 class="greeting-text">{greetingTime}, {user.name || 'Mani'} 👋</h1>
+      <h1 class="greeting-text">{greetingTime}, {user.name || 'Guest'} 👋</h1>
       <p class="greeting-subtext">{dynamicStreakSubtext}</p>
     </div>
     <div class="header-actions">
@@ -162,7 +163,9 @@
         aria-label="Open In-App Notification Center"
       >
         <span class="material-symbols-outlined">notifications</span>
-        <span class="bell-badge"></span>
+        {#if unreadCount > 0}
+          <span class="bell-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+        {/if}
       </button>
       <button 
         type="button"
@@ -502,12 +505,22 @@
   }
   .bell-badge {
     position: absolute;
-    top: 9px;
-    right: 9px;
-    width: 8px;
-    height: 8px;
+    top: 5px;
+    right: 5px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
     background: var(--color-rose);
-    border-radius: 50%;
+    color: #ffffff;
+    border-radius: 99px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--surface-1);
+    box-sizing: border-box;
+    pointer-events: none;
   }
 
   .alerts-pill {

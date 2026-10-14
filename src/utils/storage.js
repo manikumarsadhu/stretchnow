@@ -1,4 +1,4 @@
-import { getLocalDateString, getYesterdayLocalDateString } from './date.js';
+import { getLocalDateString, getYesterdayLocalDateString, getMondayFirstDayIndex, isSameCalendarWeek } from './date.js';
 import { LocalRepository } from '../storage/LocalRepository.js';
 
 const STORAGE_KEY = 'stretchnow_v1_data';
@@ -6,7 +6,7 @@ const STORAGE_KEY = 'stretchnow_v1_data';
 export const DEFAULT_STATE = {
   version: 2,
   user: {
-    name: 'Friend',
+    name: 'Guest',
     occupation: 'Desk Worker',
     workStart: '09:00',
     workEnd: '17:00',
@@ -46,10 +46,10 @@ export const DEFAULT_STATE = {
     lastActiveDate: getLocalDateString()
   },
   statistics: {
-    dailyBreaks: [3, 5, 4, 6, 5, 7, 4],
-    weeklyProgress: [50, 70, 60, 85, 75, 100, 65],
-    waterIntake: [5, 8, 6, 8, 7, 8, 6],
-    sittingHours: [7.5, 8, 7, 8.5, 6.5, 5, 6]
+    dailyBreaks: [0, 0, 0, 0, 0, 0, 0],
+    weeklyProgress: [0, 0, 0, 0, 0, 0, 0],
+    waterIntake: [0, 0, 0, 0, 0, 0, 0],
+    sittingHours: [0, 0, 0, 0, 0, 0, 0]
   },
   timer: {
     durationSeconds: 120,
@@ -59,6 +59,19 @@ export const DEFAULT_STATE = {
     currentStretchIndex: 0,
     selectedCategory: 'all'
   },
+  notifications: [
+    {
+      id: 'welcome_1',
+      type: 'break',
+      title: 'Welcome to StretchNow! 🧘',
+      message: 'Take a 2-minute posture break whenever you need a boost.',
+      timestamp: Date.now() - 600000,
+      icon: 'self_improvement',
+      actionRoute: 'break',
+      actionLabel: 'Try Quick Stretch',
+      unread: true
+    }
+  ],
   route: 'splash'
 };
 
@@ -72,7 +85,8 @@ export function loadState() {
     if (parsed.progress && parsed.progress.lastActiveDate !== today) {
       const yesterday = getYesterdayLocalDateString();
       const maintainedStreak = parsed.progress.lastActiveDate === yesterday && parsed.progress.completedBreaksToday > 0;
-      
+      const isNewWeek = !isSameCalendarWeek(parsed.progress.lastActiveDate, today);
+
       parsed.progress = {
         ...parsed.progress,
         water: 0,
@@ -82,6 +96,45 @@ export function loadState() {
         streak: maintainedStreak ? parsed.progress.streak + 1 : (parsed.progress.completedBreaksToday > 0 ? parsed.progress.streak : 1),
         lastActiveDate: today
       };
+
+      // Reset weekly stats on new calendar week
+      if (isNewWeek) {
+        parsed.statistics = {
+          dailyBreaks: [0, 0, 0, 0, 0, 0, 0],
+          weeklyProgress: [0, 0, 0, 0, 0, 0, 0],
+          waterIntake: [0, 0, 0, 0, 0, 0, 0],
+          sittingHours: [0, 0, 0, 0, 0, 0, 0]
+        };
+      }
+    }
+
+    // Purge legacy hardcoded mock statistics if present in user storage
+    const legacyBreaks = [3, 5, 4, 6, 5, 7, 4];
+    const isLegacy = parsed.statistics?.dailyBreaks && 
+      parsed.statistics.dailyBreaks.length === 7 && 
+      parsed.statistics.dailyBreaks.every((val, idx) => val === legacyBreaks[idx]);
+    if (isLegacy || !parsed.statistics) {
+      parsed.statistics = {
+        dailyBreaks: [0, 0, 0, 0, 0, 0, 0],
+        weeklyProgress: [0, 0, 0, 0, 0, 0, 0],
+        waterIntake: [0, 0, 0, 0, 0, 0, 0],
+        sittingHours: [0, 0, 0, 0, 0, 0, 0]
+      };
+    }
+
+    // Keep today's statistics index synchronized with today's live progress
+    const todayIndex = getMondayFirstDayIndex();
+    if (parsed.statistics?.dailyBreaks) {
+      const todayBreaks = parsed.progress?.completedBreaksToday || 0;
+      if (todayBreaks > (parsed.statistics.dailyBreaks[todayIndex] || 0)) {
+        parsed.statistics.dailyBreaks[todayIndex] = todayBreaks;
+      }
+    }
+    if (parsed.statistics?.waterIntake) {
+      const todayWater = parsed.progress?.water || 0;
+      if (todayWater > (parsed.statistics.waterIntake[todayIndex] || 0)) {
+        parsed.statistics.waterIntake[todayIndex] = todayWater;
+      }
     }
     
     return {
@@ -91,6 +144,7 @@ export function loadState() {
       progress: { ...DEFAULT_STATE.progress, ...(parsed.progress || {}) },
       statistics: { ...DEFAULT_STATE.statistics, ...(parsed.statistics || {}) },
       timer: { ...DEFAULT_STATE.timer, ...(parsed.timer || {}) },
+      notifications: Array.isArray(parsed.notifications) ? parsed.notifications : [...DEFAULT_STATE.notifications],
       route: 'splash'
     };
   } catch (err) {
@@ -106,7 +160,8 @@ export function saveState(state) {
       user: state.user,
       settings: state.settings,
       progress: state.progress,
-      statistics: state.statistics
+      statistics: state.statistics,
+      notifications: state.notifications || []
     };
     LocalRepository.set(STORAGE_KEY, toSave);
   } catch (err) {

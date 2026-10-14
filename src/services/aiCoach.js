@@ -1,3 +1,6 @@
+import { getMondayFirstDayIndex } from '../utils/date.js';
+import { calculateSittingHoursForDay } from '../utils/sitting.js';
+
 const API_KEY = import.meta.env.VITE_HUGGINGFACE_API_KEY || "";
 
 /**
@@ -13,9 +16,10 @@ export async function getAICoachAdvice(progress, user, statistics) {
   const occupation = user.occupation || 'Desk Worker';
 
   // Get current day's sitting hours
-  const todayIndex = (new Date().getDay() + 6) % 7;
-  const sittingHoursList = statistics.sittingHours || [7.5, 8, 7, 8.5, 6.5, 5, 6];
-  const todaySittingHours = sittingHoursList[todayIndex] !== undefined ? sittingHoursList[todayIndex] : 8;
+  const todayIndex = getMondayFirstDayIndex();
+  const todaySittingHours = (statistics?.sittingHours && statistics.sittingHours[todayIndex] !== undefined && statistics.sittingHours[todayIndex] > 0)
+    ? statistics.sittingHours[todayIndex]
+    : calculateSittingHoursForDay(user, todayIndex, breaksCompleted, todayIndex);
 
   try {
     // Attempt request to a free Hugging Face / standard AI endpoint using the key

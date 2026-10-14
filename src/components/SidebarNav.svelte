@@ -12,6 +12,7 @@
     { id: 'statistics', label: 'Statistics', icon: 'bar_chart' },
     { id: 'goals', label: 'Goals', icon: 'flag' },
     { id: 'aicoach', label: 'AI Coach', icon: 'psychology' },
+    { id: 'admin', label: 'Admin Console', icon: 'admin_panel_settings' },
     { id: 'settings', label: 'Settings', icon: 'settings' }
   ];
 
@@ -71,7 +72,7 @@
       <span class="material-symbols-outlined">person</span>
     </div>
     <div class="user-info">
-      <span class="user-name">{user.name || 'Mani Kumar'}</span>
+      <span class="user-name">{user.name || 'Guest'}</span>
       <span class="user-streak">🔥 {progress.streak || 7}-Day Streak</span>
     </div>
   </div>

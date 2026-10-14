@@ -39,6 +39,10 @@ export const ROUTE_METADATA = {
     title: 'Preferences & Reminder Schedule | StretchNow',
     description: 'Configure notification preferences, sound alerts, theme settings, and cloud data backups.'
   },
+  admin: {
+    title: 'Admin Console & AI Control Center | StretchNow',
+    description: 'Manage AI models, token usage, daily credits, failover priority pool, and app health diagnostics.'
+  },
   notfound: {
     title: '404 Page Not Found | StretchNow',
     description: 'The requested page or section could not be found.'

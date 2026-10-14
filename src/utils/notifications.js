@@ -347,7 +347,11 @@ export function sendStretchNotification(title, body) {
   }
 }
 
-export function scheduleStretchReminders(intervalMinutes = 45, onTrigger) {
+/**
+ * @param {number} [intervalMinutes=45]
+ * @param {(() => void) | null} [onTrigger]
+ */
+export function scheduleStretchReminders(intervalMinutes = 45, onTrigger = null) {
   if (reminderIntervalId) {
     clearInterval(reminderIntervalId);
   }

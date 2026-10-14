@@ -54,12 +54,12 @@ export const defaultDriver = new StorageDriver();
 export const LocalRepository = {
   /**
    * Reads a record from local storage with optional fallback.
-   * @template T
+   * @template [T=any]
    * @param {string} key
    * @param {T} [fallback]
-   * @returns {T|null}
+   * @returns {T}
    */
-  get(key, fallback = null) {
+  get(key, fallback = /** @type {any} */ (null)) {
     const data = defaultDriver.get(key);
     return data !== null && data !== undefined ? data : fallback;
   },

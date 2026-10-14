@@ -3,8 +3,8 @@
   import NotificationCenterModal from './NotificationCenterModal.svelte';
 
   $: user = $appStore?.user || {};
-  $: settings = $appStore?.settings || {};
   $: route = $appStore?.route || 'home';
+  $: unreadCount = ($appStore?.notifications || []).filter((n) => n.unread).length;
 
   let isNotificationCenterOpen = false;
 
@@ -12,7 +12,7 @@
   const greetingTime = currentHour < 12 ? 'Good Morning' : currentHour < 18 ? 'Good Afternoon' : 'Good Evening';
 
   $: pageTitle = (route === 'home') 
-    ? `${greetingTime}, ${user?.name || 'Mani'} 👋`
+    ? `${greetingTime}, ${user?.name || 'Guest'} 👋`
     : (route === 'break') ? 'Active Stretch Session 🧘'
     : (route === 'library') ? 'Stretch Routine Library 📚'
     : (route === 'statistics') ? 'Personal Wellness Analytics 📊'
@@ -43,24 +43,24 @@
         type="button" 
         class="header-action-btn bell-btn" 
         on:click={() => isNotificationCenterOpen = true}
-        title="In-App Notification History"
+        title={unreadCount > 0 ? `${unreadCount} unread alert${unreadCount > 1 ? 's' : ''}` : 'Notification Center'}
         aria-label="Open In-App Notification Center"
       >
         <span class="material-symbols-outlined">notifications</span>
-        <span class="bell-badge"></span>
+        {#if unreadCount > 0}
+          <span class="bell-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+        {/if}
       </button>
 
-      <!-- Meeting Mode Shortcut -->
+      <!-- Admin Console Quick Trigger -->
       <button 
         type="button" 
-        class="header-action-btn alerts-pill {settings?.smartSchedule?.activeMeetingMode ? 'muted' : 'active'}"
-        on:click={() => navigateTo('settings')}
-        title={settings?.smartSchedule?.activeMeetingMode ? 'Meeting Mode Active (Alerts Paused)' : 'Alerts Active'}
-        aria-label="Alerts Status"
+        class="header-action-btn admin-btn" 
+        on:click={() => navigateTo('admin')}
+        title="Admin Console & AI Control Center"
+        aria-label="Open Admin Console"
       >
-        <span class="material-symbols-outlined">
-          {settings?.smartSchedule?.activeMeetingMode ? 'notifications_off' : 'notifications_active'}
-        </span>
+        <span class="material-symbols-outlined">admin_panel_settings</span>
       </button>
 
       <!-- Profile Avatar Button -->
@@ -73,7 +73,7 @@
         <div class="avatar-circle">
           <span class="material-symbols-outlined">person</span>
         </div>
-        <span class="profile-name">{user?.name || 'Mani'}</span>
+        <span class="profile-name">{user?.name || 'Guest'}</span>
       </button>
     </div>
   </div>
@@ -167,22 +167,25 @@
     transform: translateY(-2px);
   }
 
-  .alerts-pill {
-    color: var(--primary);
-  }
-
-  .alerts-pill.muted {
-    color: var(--text-muted);
-  }
 
   .bell-badge {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 8px;
-    height: 8px;
+    top: 4px;
+    right: 4px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
     background: var(--color-rose);
-    border-radius: 50%;
+    color: #ffffff;
+    border-radius: 99px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--surface-1);
+    box-sizing: border-box;
+    pointer-events: none;
   }
 
   .profile-btn {

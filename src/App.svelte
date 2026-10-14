@@ -12,6 +12,7 @@
   import Library from './routes/Library.svelte';
   import Statistics from './routes/Statistics.svelte';
   import Settings from './routes/Settings.svelte';
+  import Admin from './routes/Admin.svelte';
   import NotFound from './routes/NotFound.svelte';
   import BottomNav from './components/BottomNav.svelte';
   import SidebarNav from './components/SidebarNav.svelte';
@@ -100,12 +101,12 @@
     <SidebarNav />
   {/if}
 
-  <div class="app-content-wrapper">
+  <div class="app-content-wrapper {route === 'admin' ? 'full-width-wrapper' : ''}">
     {#if showBottomNav}
       <DesktopHeader />
     {/if}
 
-    <main class="main-content">
+    <main class="main-content {route === 'admin' ? 'admin-main' : ''}">
       {#if route === 'splash'}
         <Splash />
       {:else if route === 'welcome'}
@@ -124,6 +125,8 @@
         <Statistics />
       {:else if route === 'settings'}
         <Settings />
+      {:else if route === 'admin'}
+        <Admin />
       {:else}
         <NotFound />
       {/if}
@@ -266,5 +269,16 @@
       max-width: 94%;
       margin: 0 auto;
     }
+  }
+
+  .full-width-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  .admin-main {
+    max-width: 100% !important;
+    min-height: 100vh;
+    padding: 0;
   }
 </style>

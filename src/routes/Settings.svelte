@@ -223,7 +223,7 @@
     <div class="profile-info">
       <div class="info-row">
         <span>Name</span>
-        <strong>{user.name || 'Friend'}</strong>
+        <strong>{user.name || 'Guest'}</strong>
       </div>
       <div class="info-row">
         <span>Occupation</span>
@@ -631,6 +631,18 @@
           View Full Privacy Policy
         </Button>
       </div>
+    </div>
+  </Card>
+
+  <!-- Admin & AI Intelligence Console -->
+  <Card title="Admin & AI Control Center" icon="admin_panel_settings" padding="md">
+    <div class="admin-setting-body">
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin: 0 0 14px 0;">
+        Access multi-model AI failover telemetry, inspect consumed token metrics, adjust daily query limits, and review cloud database diagnostics.
+      </p>
+      <Button variant="secondary" size="md" icon="shield_person" onclick={() => navigateTo('admin')}>
+        Open Admin Console
+      </Button>
     </div>
   </Card>
 

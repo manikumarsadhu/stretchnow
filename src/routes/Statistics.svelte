@@ -3,31 +3,78 @@
   import Card from '../components/Card.svelte';
   import Button from '../components/Button.svelte';
   import { appStore } from '../stores/app.js';
-
-  $: statistics = $appStore.statistics || {
-    dailyBreaks: [3, 5, 4, 6, 5, 7, 4],
-    weeklyProgress: [50, 70, 60, 85, 75, 100, 65],
-    waterIntake: [5, 8, 6, 8, 7, 8, 6],
-    sittingHours: [7.5, 8, 7, 8.5, 6.5, 5, 6]
-  };
+  import { getMondayFirstDayIndex } from '../utils/date.js';
+  import { calculateSittingHoursForDay } from '../utils/sitting.js';
 
   const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  $: totalBreaksThisWeek = statistics.dailyBreaks.reduce((a, b) => a + b, 0);
-  $: avgWater = (statistics.waterIntake.reduce((a, b) => a + b, 0) / 7).toFixed(1);
+  const todayIndex = getMondayFirstDayIndex();
+  $: todayBreaks = $appStore.progress?.completedBreaksToday || 0;
+  $: todayWater = $appStore.progress?.water || 0;
+  $: breakGoal = $appStore.user?.dailyBreakGoal || 6;
 
-  // Advanced monthly report indicators
-  $: maxBreaks = Math.max(...statistics.dailyBreaks);
-  $: bestDayIndex = statistics.dailyBreaks.indexOf(maxBreaks);
-  $: bestDay = bestDayIndex !== -1 ? DAYS[bestDayIndex] : 'N/A';
-  
-  $: minBreaks = Math.min(...statistics.dailyBreaks);
-  $: worstDayIndex = statistics.dailyBreaks.indexOf(minBreaks);
-  $: worstDay = worstDayIndex !== -1 ? DAYS[worstDayIndex] : 'N/A';
-  
-  $: avgSitting = (statistics.sittingHours.reduce((a, b) => a + b, 0) / 7).toFixed(1);
-  $: consistencyCount = statistics.dailyBreaks.filter(b => b > 0).length;
-  $: consistencyPercent = Math.round((consistencyCount / 7) * 100);
+  // Daily breaks array with live today overlay (future days are 0)
+  $: rawDailyBreaks = $appStore.statistics?.dailyBreaks || [0, 0, 0, 0, 0, 0, 0];
+  $: dailyBreaks = DAYS.map((_, idx) => {
+    if (idx > todayIndex) return 0;
+    if (idx === todayIndex) return Math.max(rawDailyBreaks[idx] || 0, todayBreaks);
+    return rawDailyBreaks[idx] || 0;
+  });
+
+  // Daily water array with live today overlay (future days are 0)
+  $: rawWater = $appStore.statistics?.waterIntake || [0, 0, 0, 0, 0, 0, 0];
+  $: waterIntake = DAYS.map((_, idx) => {
+    if (idx > todayIndex) return 0;
+    if (idx === todayIndex) return Math.max(rawWater[idx] || 0, todayWater);
+    return rawWater[idx] || 0;
+  });
+
+  // Weekly posture goal progress (% of daily break goal achieved)
+  $: weeklyProgress = dailyBreaks.map((b, idx) => {
+    if (idx > todayIndex) return 0;
+    return Math.min(100, Math.round((b / breakGoal) * 100));
+  });
+
+  // Sedentary sitting time (calculated per workday minus active break time)
+  $: sittingHours = DAYS.map((_, idx) => {
+    return calculateSittingHoursForDay(
+      $appStore.user,
+      idx,
+      dailyBreaks[idx] || 0,
+      todayIndex,
+      $appStore.settings?.smartSchedule?.weekendMode
+    );
+  });
+
+  // Total breaks completed this week
+  $: totalBreaksThisWeek = dailyBreaks.reduce((a, b) => a + b, 0);
+
+  // Days elapsed so far in the current week (e.g. Mon=1 day, Tue=2 days, Wed=3 days)
+  const elapsedDays = todayIndex + 1;
+
+  // Avg daily water intake over elapsed days of this week
+  $: totalWaterThisWeek = waterIntake.slice(0, elapsedDays).reduce((a, b) => a + b, 0);
+  $: avgWater = elapsedDays > 0 ? (totalWaterThisWeek / elapsedDays).toFixed(1) : '0.0';
+
+  // Break Consistency (% of elapsed days with at least 1 break)
+  $: elapsedBreaks = dailyBreaks.slice(0, elapsedDays);
+  $: activeDaysWithBreaks = elapsedBreaks.filter(b => b > 0).length;
+  $: consistencyPercent = elapsedDays > 0 ? Math.round((activeDaysWithBreaks / elapsedDays) * 100) : 0;
+
+  // Best and Worst stretching days (only evaluated across elapsed days)
+  $: maxBreaks = Math.max(...elapsedBreaks);
+  $: minBreaks = Math.min(...elapsedBreaks);
+
+  $: bestDay = maxBreaks > 0 ? DAYS[elapsedBreaks.indexOf(maxBreaks)] : 'None yet';
+  $: worstDay = maxBreaks === 0
+    ? 'None yet'
+    : (minBreaks === maxBreaks ? '—' : DAYS[elapsedBreaks.indexOf(minBreaks)]);
+
+  // Average sitting hours over elapsed days
+  $: elapsedSitting = sittingHours.slice(0, elapsedDays);
+  $: totalSitting = elapsedSitting.reduce((a, b) => a + b, 0);
+  $: daysWithSitting = elapsedSitting.filter(h => h > 0).length || 1;
+  $: avgSitting = totalSitting > 0 ? (totalSitting / daysWithSitting).toFixed(1) : '0.0';
 
   function handlePrintPDF() {
     if (typeof window !== 'undefined') {
@@ -102,7 +149,7 @@
     <Chart
       title="Daily Breaks Tracked"
       labels={DAYS}
-      data={statistics.dailyBreaks}
+      data={dailyBreaks}
       color="#6366f1"
       chartType="bar"
       unit="breaks"
@@ -111,7 +158,7 @@
     <Chart
       title="Weekly Posture Goal Progress"
       labels={DAYS}
-      data={statistics.weeklyProgress}
+      data={weeklyProgress}
       color="#10b981"
       chartType="line"
       unit="%"
@@ -120,7 +167,7 @@
     <Chart
       title="Daily Water Intake"
       labels={DAYS}
-      data={statistics.waterIntake}
+      data={waterIntake}
       color="#0284c7"
       chartType="bar"
       unit="cups"
@@ -129,7 +176,7 @@
     <Chart
       title="Sedentary Sitting Time"
       labels={DAYS}
-      data={statistics.sittingHours}
+      data={sittingHours}
       color="#f59e0b"
       chartType="line"
       unit="hrs"

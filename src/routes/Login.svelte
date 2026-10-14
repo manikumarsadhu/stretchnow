@@ -102,6 +102,10 @@
           <button class="guest-btn" on:click={handleGuest}>
             Continue as Guest
           </button>
+
+          <button type="button" class="guest-btn" style="color: #6366f1; font-weight: 700; border-top: 1px dashed rgba(99, 102, 241, 0.2); margin-top: 8px; padding-top: 12px;" on:click={() => navigateTo('admin')}>
+            🛡️ Admin Console Login
+          </button>
         </div>
       {:else}
         <!-- Email & Password Form -->

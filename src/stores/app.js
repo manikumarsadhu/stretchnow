@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { loadState, saveState, resetState as clearStorageState } from '../utils/storage.js';
+import { loadState, saveState, resetState as clearStorageState, DEFAULT_STATE } from '../utils/storage.js';
 import { scheduleStretchReminders, stopScheduler, startAlarmRinging, stopAlarmRinging } from '../utils/notifications.js';
 import {
   getCurrentUser,
@@ -24,7 +24,7 @@ import { getAdaptiveInterval } from '../services/scheduler.js';
 import { formatTimelineTime } from '../utils/summaryGenerator.js';
 import { enqueue } from '../sync/queue.js';
 import { processQueue } from '../sync/manager.js';
-import { getLocalDateString } from '../utils/date.js';
+import { getLocalDateString, getMondayFirstDayIndex } from '../utils/date.js';
 import { mergeProfile, mergeSettings, mergeDailyLogs, mergeAchievements, mergeStatistics } from '../sync/merge.js';
 
 const initialState = loadState();
@@ -60,7 +60,7 @@ async function triggerCloudSync(state) {
   // Enqueue profile write
   enqueue(COLLECTION_PROFILES_ID, userId, 'update', {
     userId,
-    displayName: state.user.name || 'Friend',
+    displayName: state.user.name || 'Guest',
     email: state.user.email || '',
     language: state.user.language || 'en',
     theme: state.settings.theme || 'system',
@@ -327,11 +327,21 @@ export async function logoutAppwriteSession() {
   appStore.update((state) => ({
     ...state,
     user: {
-      ...state.user,
+      ...DEFAULT_STATE.user,
+      name: 'Guest',
       appwriteId: null,
       email: null,
       isAnonymous: false
-    }
+    },
+    progress: {
+      ...DEFAULT_STATE.progress,
+      lastActiveDate: getLocalDateString()
+    },
+    statistics: {
+      ...DEFAULT_STATE.statistics
+    },
+    notifications: [...DEFAULT_STATE.notifications],
+    route: 'login'
   }));
 }
 
@@ -407,10 +417,22 @@ export function updateSmartSchedule(smartScheduleData) {
 export function triggerAlarmRing(title = 'Time to stretch! 🧘', body = 'Your body needs a quick posture refresh. Stand up & reset your energy!') {
   appStore.update((state) => {
     startAlarmRinging(state.settings?.reminderSound || 'zen');
+    const newNotif = {
+      id: `alarm_${Date.now()}`,
+      type: 'break',
+      title,
+      message: body,
+      timestamp: Date.now(),
+      icon: 'self_improvement',
+      actionRoute: 'break',
+      actionLabel: 'Start Stretch',
+      unread: true
+    };
     return {
       ...state,
       isAlarmRinging: true,
-      activeAlarmInfo: { title, body, timestamp: Date.now() }
+      activeAlarmInfo: { title, body, timestamp: Date.now() },
+      notifications: [newNotif, ...(state.notifications || [])].slice(0, 25)
     };
   });
 }
@@ -565,16 +587,25 @@ export function undoAction() {
     
     if (lastAction.type === 'water') {
       nextProgress.water = Math.max(0, nextProgress.water - 1);
+      const todayIndex = getMondayFirstDayIndex();
+      const updatedWater = [...(state.statistics?.waterIntake || [0, 0, 0, 0, 0, 0, 0])];
+      updatedWater[todayIndex] = Math.max(0, nextProgress.water);
+      nextStats.waterIntake = updatedWater;
     } else if (lastAction.type === 'stretch') {
       nextProgress.completedBreaksToday = Math.max(0, nextProgress.completedBreaksToday - 1);
       nextProgress.totalCompletedBreaks = Math.max(0, (nextProgress.totalCompletedBreaks || 0) - 1);
       nextProgress.score = Math.max(0, nextProgress.score - (lastAction.scoreEarned || 50));
       nextProgress.xp = Math.max(0, nextProgress.xp - (lastAction.scoreEarned || 50));
       
-      const todayIndex = new Date().getDay();
-      const updatedDailyBreaks = [...state.statistics.dailyBreaks];
-      updatedDailyBreaks[todayIndex] = Math.max(0, (updatedDailyBreaks[todayIndex] || 0) - 1);
+      const todayIndex = getMondayFirstDayIndex();
+      const updatedDailyBreaks = [...(state.statistics?.dailyBreaks || [0, 0, 0, 0, 0, 0, 0])];
+      updatedDailyBreaks[todayIndex] = Math.max(0, nextProgress.completedBreaksToday);
       nextStats.dailyBreaks = updatedDailyBreaks;
+
+      const updatedProgress = [...(state.statistics?.weeklyProgress || [0, 0, 0, 0, 0, 0, 0])];
+      const breakGoal = state.user?.dailyBreakGoal || 6;
+      updatedProgress[todayIndex] = Math.min(100, Math.round((nextProgress.completedBreaksToday / breakGoal) * 100));
+      nextStats.weeklyProgress = updatedProgress;
     } else if (lastAction.type === 'skip') {
       nextProgress.consecutiveSkips = Math.max(0, nextProgress.consecutiveSkips - 1);
       
@@ -714,9 +745,21 @@ export function incrementWater() {
   appStore.update((state) => {
     const newWater = state.progress.water + 1;
     const currentBadges = [...(state.progress.badges || [])];
+    const addedNotifs = [];
     
     if (newWater >= (state.user.dailyWaterGoal || 8) && !currentBadges.includes('water-goal')) {
       currentBadges.push('water-goal');
+      addedNotifs.push({
+        id: `water_${Date.now()}`,
+        type: 'hydration',
+        title: 'Hydration Goal Reached! 💧',
+        message: `Great habit! You reached your daily goal of ${state.user.dailyWaterGoal || 8} cups of water.`,
+        timestamp: Date.now(),
+        icon: 'water_drop',
+        actionRoute: 'home',
+        actionLabel: 'View Dashboard',
+        unread: true
+      });
     }
     
     const timeline = [...(state.progress.timeline || [])];
@@ -726,6 +769,10 @@ export function incrementWater() {
       label: 'Logged +1 water cup'
     });
     
+    const todayIndex = getMondayFirstDayIndex();
+    const updatedWaterIntake = [...(state.statistics?.waterIntake || [0, 0, 0, 0, 0, 0, 0])];
+    updatedWaterIntake[todayIndex] = newWater;
+
     const nextState = {
       ...state,
       progress: {
@@ -737,7 +784,12 @@ export function incrementWater() {
           type: 'water',
           timestamp: Date.now()
         }
-      }
+      },
+      statistics: {
+        ...state.statistics,
+        waterIntake: updatedWaterIntake
+      },
+      notifications: addedNotifs.length > 0 ? [...addedNotifs, ...(state.notifications || [])].slice(0, 25) : state.notifications
     };
     triggerCloudSync(nextState);
     return nextState;
@@ -746,9 +798,14 @@ export function incrementWater() {
 
 export function completeBreak(scoreEarned = 50) {
   appStore.update((state) => {
-    const todayIndex = new Date().getDay();
-    const updatedDailyBreaks = [...state.statistics.dailyBreaks];
-    updatedDailyBreaks[todayIndex] = (updatedDailyBreaks[todayIndex] || 0) + 1;
+    const todayIndex = getMondayFirstDayIndex();
+    const nextBreaksCompleted = (state.progress.completedBreaksToday || 0) + 1;
+    const updatedDailyBreaks = [...(state.statistics?.dailyBreaks || [0, 0, 0, 0, 0, 0, 0])];
+    updatedDailyBreaks[todayIndex] = nextBreaksCompleted;
+
+    const breakGoal = state.user?.dailyBreakGoal || 6;
+    const updatedWeeklyProgress = [...(state.statistics?.weeklyProgress || [0, 0, 0, 0, 0, 0, 0])];
+    updatedWeeklyProgress[todayIndex] = Math.min(100, Math.round((nextBreaksCompleted / breakGoal) * 100));
     
     const totalBreaks = (state.progress.totalCompletedBreaks || 0) + 1;
     
@@ -801,11 +858,42 @@ export function completeBreak(scoreEarned = 50) {
       currentBadges.push('streak-30');
     }
     
+    const addedNotifs = [];
+
+    if (leveledUp) {
+      console.log('Leveled up to Level', newLevel);
+      addedNotifs.push({
+        id: `lvl_${Date.now()}`,
+        type: 'badge',
+        title: `Level Up! Level ${newLevel} 🎉`,
+        message: `Congratulations! You leveled up to Level ${newLevel} by completing your stretch break!`,
+        timestamp: Date.now(),
+        icon: 'military_tech',
+        actionRoute: 'statistics',
+        actionLabel: 'View Badges',
+        unread: true
+      });
+    }
+
+    if (nextBreaksCompleted >= (state.user.dailyBreakGoal || 6) && state.progress.completedBreaksToday < (state.user.dailyBreakGoal || 6)) {
+      addedNotifs.push({
+        id: `break_goal_${Date.now()}`,
+        type: 'badge',
+        title: 'Daily Break Goal Achieved! 🎯',
+        message: `You completed ${nextBreaksCompleted} breaks today, hitting your daily goal! Keep your body mobile.`,
+        timestamp: Date.now(),
+        icon: 'verified',
+        actionRoute: 'statistics',
+        actionLabel: 'View Stats',
+        unread: true
+      });
+    }
+    
     const nextState = {
       ...state,
       progress: {
         ...state.progress,
-        completedBreaksToday: state.progress.completedBreaksToday + 1,
+        completedBreaksToday: nextBreaksCompleted,
         totalCompletedBreaks: totalBreaks,
         score: state.progress.score + scoreEarned,
         xp: newXp,
@@ -822,13 +910,11 @@ export function completeBreak(scoreEarned = 50) {
       },
       statistics: {
         ...state.statistics,
-        dailyBreaks: updatedDailyBreaks
-      }
+        dailyBreaks: updatedDailyBreaks,
+        weeklyProgress: updatedWeeklyProgress
+      },
+      notifications: addedNotifs.length > 0 ? [...addedNotifs, ...(state.notifications || [])].slice(0, 25) : state.notifications
     };
-    
-    if (leveledUp) {
-      console.log('Leveled up to Level', newLevel);
-    }
 
     triggerCloudSync(nextState);
     return nextState;
@@ -839,4 +925,53 @@ export function resetAppState() {
   const reset = clearStorageState();
   appStore.set(reset);
 }
+
+export function addNotification({ type = 'break', title, message, actionRoute = null, actionLabel = null, icon = 'notifications' }) {
+  appStore.update((state) => {
+    const newNotif = {
+      id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      type,
+      title,
+      message,
+      timestamp: Date.now(),
+      icon,
+      actionRoute,
+      actionLabel,
+      unread: true
+    };
+    return {
+      ...state,
+      notifications: [newNotif, ...(state.notifications || [])].slice(0, 25)
+    };
+  });
+}
+
+export function markNotificationAsRead(id) {
+  appStore.update((state) => ({
+    ...state,
+    notifications: (state.notifications || []).map((n) => (n.id === id ? { ...n, unread: false } : n))
+  }));
+}
+
+export function markAllNotificationsAsRead() {
+  appStore.update((state) => ({
+    ...state,
+    notifications: (state.notifications || []).map((n) => ({ ...n, unread: false }))
+  }));
+}
+
+export function removeNotification(id) {
+  appStore.update((state) => ({
+    ...state,
+    notifications: (state.notifications || []).filter((n) => n.id !== id)
+  }));
+}
+
+export function clearAllNotifications() {
+  appStore.update((state) => ({
+    ...state,
+    notifications: []
+  }));
+}
+
 
