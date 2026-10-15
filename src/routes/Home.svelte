@@ -4,7 +4,7 @@
   import Button from '../components/Button.svelte';
   import WellnessSummaryModal from '../components/WellnessSummaryModal.svelte';
   import NotificationCenterModal from '../components/NotificationCenterModal.svelte';
-  import { appStore, navigateTo, incrementWater } from '../stores/app.js';
+  import { appStore, navigateTo, incrementWater, startTodayAction, endTodayAction } from '../stores/app.js';
   import { calculateWellnessScore, calculateWaterPercentage, calculateBreakGoalPercentage } from '../utils/wellness.js';
   import { triggerConfetti } from '../utils/confetti.js';
 
@@ -17,6 +17,17 @@
   $: waterPercent  = calculateWaterPercentage(progress.water, user.dailyWaterGoal);
   $: breakPercent  = calculateBreakGoalPercentage(progress.completedBreaksToday, user.dailyBreakGoal);
 
+  $: scoreTier = wellnessScore >= 80 
+    ? { key: 'excellent', label: 'Excellent', icon: 'check_circle' } 
+    : wellnessScore >= 60 
+    ? { key: 'good', label: 'Good', icon: 'thumb_up' } 
+    : { key: 'focus', label: 'Needs Focus', icon: 'track_changes' };
+
+  $: focusAreas = [
+    waterPercent < 60 && `Hydration (${waterPercent}%)`,
+    breakPercent < 60 && `Breaks (${breakPercent}%)`
+  ].filter(Boolean);
+
   // Dynamic Greeting
   const currentHour = new Date().getHours();
   const greetingTime = currentHour < 12 ? 'Good Morning' : currentHour < 18 ? 'Good Afternoon' : 'Good Evening';
@@ -24,6 +35,20 @@
   $: dynamicStreakSubtext = streakDays > 1 
     ? `🔥 You're on a ${streakDays}-day streak! Let's keep it going.` 
     : `🔥 Start your posture streak today with a 2-minute break!`;
+
+  $: workdayStartTimeFormatted = progress.workdayStartedAt
+    ? new Date(progress.workdayStartedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : null;
+
+  function handleStartToday() {
+    startTodayAction();
+    showCelebration('🚀 Workday targets activated! Have a great day.');
+  }
+
+  function handleEndToday() {
+    endTodayAction();
+    showCelebration('👏 Workday finished! Well done today.');
+  }
 
   // Focus Mode, Summary & Notification Center
   let focusMode = false;
@@ -205,25 +230,98 @@
 
   {:else}
 
-    <!-- ── 2. HERO NEXT BREAK CARD ── -->
+    <!-- ── 2. HERO WORKDAY & NEXT BREAK SECTION ── -->
     <section class="hero-section">
-      <Card variant="hero" padding="lg">
-        <div class="hero-card-inner">
-          <div class="hero-badge-pill">
-            <span class="material-symbols-outlined">alarm</span>
-            <span>{isBreakDue ? 'Break Ready Now!' : 'Next Break'}</span>
+      {#if !progress.todayStarted}
+        <!-- State A: Workday Not Started Yet -->
+        <Card variant="hero" padding="lg">
+          <div class="start-today-card-inner">
+            <div class="hero-badge-pill">
+              <span class="material-symbols-outlined">wb_sunny</span>
+              <span>{greetingTime}! Ready for work?</span>
+            </div>
+            <h2 class="start-today-title">Start Today's Targets</h2>
+            <p class="start-today-desc">
+              Tap to begin tracking your posture breaks, hydration, and daily wellness goals.
+            </p>
+            
+            <div class="targets-preview-grid">
+              <div class="target-chip">
+                <span class="material-symbols-outlined chip-icon">self_improvement</span>
+                <span class="chip-val">{breakGoal}</span>
+                <span class="chip-lbl">Breaks Target</span>
+              </div>
+              <div class="target-chip">
+                <span class="material-symbols-outlined chip-icon">water_drop</span>
+                <span class="chip-val">{waterGoal}</span>
+                <span class="chip-lbl">Water Cups</span>
+              </div>
+              <div class="target-chip">
+                <span class="material-symbols-outlined chip-icon">timer</span>
+                <span class="chip-val">{settings.reminderIntervalMinutes || 45}m</span>
+                <span class="chip-lbl">Break Cadence</span>
+              </div>
+            </div>
+
+            <div class="start-cta-wrap">
+              <Button variant="secondary" size="lg" icon="play_arrow" fullWidth onclick={handleStartToday}>
+                Start Today
+              </Button>
+            </div>
+            <button type="button" class="quick-stretch-link" on:click={() => navigateTo('break')}>
+              Or start a 2-min stretch now →
+            </button>
           </div>
-          <div class="hero-countdown">
-            {isBreakDue ? 'Ready!' : `${nextBreak.inMin} min`}
+        </Card>
+
+      {:else if progress.todayEnded}
+        <!-- State B: Workday Finished -->
+        <Card variant="elevated" padding="lg">
+          <div class="day-ended-card-inner">
+            <div class="day-ended-icon-wrap">
+              <span class="material-symbols-outlined day-ended-icon">task_alt</span>
+            </div>
+            <h2 class="day-ended-title">Workday Complete! 🎉</h2>
+            <p class="day-ended-desc">
+              Great posture consistency today. You finished <strong>{progress.completedBreaksToday || 0} breaks</strong> and logged <strong>{progress.water || 0} water cups</strong>.
+            </p>
+            <div class="day-ended-actions">
+              <Button variant="outline" size="md" icon="restart_alt" onclick={handleStartToday}>
+                Resume Workday
+              </Button>
+              <Button variant="primary" size="md" icon="insights" onclick={() => navigateTo('statistics')}>
+                View Daily Report
+              </Button>
+            </div>
           </div>
-          <p class="hero-scheduled">Scheduled for {nextBreak.time || '03:45 PM'}</p>
-          <div class="hero-cta-wrap">
-            <Button variant="secondary" size="lg" icon="play_arrow" fullWidth onclick={() => navigateTo('break')}>
-              Start Stretch
-            </Button>
+        </Card>
+
+      {:else}
+        <!-- State C: Workday Active -->
+        <Card variant="hero" padding="lg">
+          <div class="hero-card-inner">
+            <div class="hero-status-row">
+              <div class="hero-badge-pill active-pill">
+                <span class="status-pulse-dot"></span>
+                <span>Workday Active {workdayStartTimeFormatted ? `· Started ${workdayStartTimeFormatted}` : ''}</span>
+              </div>
+              <button type="button" class="end-day-btn" on:click={handleEndToday} title="End workday session">
+                End Day
+              </button>
+            </div>
+
+            <div class="hero-countdown">
+              {isBreakDue ? 'Ready!' : `${nextBreak.inMin} min`}
+            </div>
+            <p class="hero-scheduled">Scheduled for {nextBreak.time || '03:45 PM'}</p>
+            <div class="hero-cta-wrap">
+              <Button variant="secondary" size="lg" icon="play_arrow" fullWidth onclick={() => navigateTo('break')}>
+                Start Stretch
+              </Button>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      {/if}
     </section>
 
     <!-- ── 3. OVERALL WELLNESS SCORE WIDGET ── -->
@@ -234,16 +332,20 @@
             <span class="score-label">Overall Wellness</span>
             <div class="score-number-row">
               <span class="score-big">{wellnessScore}</span>
-              <span class="score-tier">{wellnessScore >= 80 ? 'Excellent' : wellnessScore >= 60 ? 'Good' : 'Needs Focus'}</span>
+              <span class="score-max">/ 100</span>
+              <span class="score-tier tier-{scoreTier.key}">
+                <span class="material-symbols-outlined tier-icon">{scoreTier.icon}</span>
+                {scoreTier.label}
+              </span>
             </div>
           </div>
-          <button type="button" class="btn-summary-link" on:click={() => isSummaryOpen = true}>
+          <button type="button" class="btn-summary-link" on:click={() => navigateTo('statistics')}>
             Report <span class="material-symbols-outlined">chevron_right</span>
           </button>
         </div>
 
         <div class="rating-bar-track">
-          <div class="rating-bar-fill" style="width: {wellnessScore}%"></div>
+          <div class="rating-bar-fill fill-{scoreTier.key}" style="width: {wellnessScore}%"></div>
         </div>
 
         <!-- 4-Pillar Score Breakdown -->
@@ -251,20 +353,38 @@
           <div class="pillar-item">
             <span class="pillar-title">Posture</span>
             <span class="pillar-val">90%</span>
+            <span class="pillar-tag tag-good">Optimal</span>
           </div>
-          <div class="pillar-item">
+          <div class="pillar-item" class:item-focus={waterPercent < 60}>
             <span class="pillar-title">Hydration</span>
-            <span class="pillar-val">{waterPercent}%</span>
+            <span class="pillar-val" class:val-focus={waterPercent < 60}>{waterPercent}%</span>
+            <span class="pillar-tag" class:tag-focus={waterPercent < 60} class:tag-good={waterPercent >= 60}>
+              {waterPercent < 60 ? 'Needs Focus' : 'Good'}
+            </span>
           </div>
           <div class="pillar-item">
             <span class="pillar-title">Movement</span>
             <span class="pillar-val">85%</span>
+            <span class="pillar-tag tag-good">Optimal</span>
           </div>
-          <div class="pillar-item">
+          <div class="pillar-item" class:item-focus={breakPercent < 60}>
             <span class="pillar-title">Breaks</span>
-            <span class="pillar-val">{breakPercent}%</span>
+            <span class="pillar-val" class:val-focus={breakPercent < 60}>{breakPercent}%</span>
+            <span class="pillar-tag" class:tag-focus={breakPercent < 60} class:tag-good={breakPercent >= 60}>
+              {breakPercent < 60 ? 'Needs Focus' : 'Good'}
+            </span>
           </div>
         </div>
+
+        {#if focusAreas.length > 0}
+          <div class="focus-callout">
+            <span class="material-symbols-outlined focus-callout-icon">flag</span>
+            <div class="focus-callout-text">
+              <span class="focus-callout-title">Focus Target:</span>
+              <span class="focus-callout-desc">Boost {focusAreas.join(' and ')} to elevate your wellness score.</span>
+            </div>
+          </div>
+        {/if}
       </Card>
     </section>
 
@@ -647,6 +767,161 @@
     max-width: 280px;
   }
 
+  /* Start Today Hero Card */
+  .start-today-card-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 8px 0;
+  }
+  .start-today-title {
+    font-size: 1.8rem;
+    font-weight: 900;
+    margin: 14px 0 6px;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+  }
+  .start-today-desc {
+    font-size: 0.9rem;
+    opacity: 0.92;
+    margin: 0 0 16px;
+    max-width: 320px;
+    line-height: 1.4;
+    color: #ffffff;
+  }
+  .targets-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  .target-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: var(--radius-sm);
+    padding: 8px 4px;
+    color: #ffffff;
+  }
+  .chip-icon {
+    font-size: 20px;
+    margin-bottom: 2px;
+  }
+  .chip-val {
+    font-size: 1.1rem;
+    font-weight: 800;
+  }
+  .chip-lbl {
+    font-size: 0.68rem;
+    font-weight: 600;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .start-cta-wrap {
+    width: 100%;
+    max-width: 280px;
+  }
+  .quick-stretch-link {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.82rem;
+    font-weight: 700;
+    margin-top: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 4px;
+  }
+
+  /* Day Ended Card */
+  .day-ended-card-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 12px 8px;
+  }
+  .day-ended-icon-wrap {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--color-success-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+  .day-ended-icon {
+    font-size: 32px;
+    color: var(--color-success);
+  }
+  .day-ended-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin: 0 0 6px;
+    color: var(--text-heading);
+  }
+  .day-ended-desc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin: 0 0 18px;
+    line-height: 1.4;
+    max-width: 320px;
+  }
+  .day-ended-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* Active Workday Status Row */
+  .hero-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .hero-badge-pill.active-pill {
+    background: rgba(255, 255, 255, 0.25);
+  }
+  .status-pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 8px #34d399;
+    animation: pulse-dot 1.5s infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+  .end-day-btn {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: all var(--anim-card);
+  }
+  .end-day-btn:hover {
+    background: rgba(244, 63, 94, 0.4);
+    border-color: rgba(244, 63, 94, 0.6);
+  }
+
   /* Wellness Score Widget */
   .score-widget-top {
     display: flex;
@@ -663,19 +938,50 @@
   }
   .score-number-row {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 8px;
     margin-top: 2px;
+    flex-wrap: wrap;
   }
   .score-big {
     font-size: 2.2rem;
     font-weight: 900;
     color: var(--text-heading);
+    line-height: 1;
+  }
+  .score-max {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-right: 2px;
   }
   .score-tier {
-    font-size: 0.92rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 0.82rem;
     font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  .score-tier .tier-icon {
+    font-size: 15px;
+  }
+  .score-tier.tier-focus {
+    background: var(--color-reminder-light);
+    color: var(--color-reminder);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+  }
+  .score-tier.tier-good {
+    background: var(--color-calm-light);
+    color: var(--color-calm);
+    border: 1px solid rgba(2, 132, 199, 0.35);
+  }
+  .score-tier.tier-excellent {
+    background: var(--color-success-light);
     color: var(--color-success);
+    border: 1px solid rgba(16, 185, 129, 0.35);
   }
   .btn-summary-link {
     background: none;
@@ -698,9 +1004,17 @@
   }
   .rating-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--color-success) 0%, var(--primary) 100%);
     border-radius: 99px;
     transition: width var(--anim-progress);
+  }
+  .rating-bar-fill.fill-focus {
+    background: linear-gradient(90deg, var(--color-reminder) 0%, #f97316 100%);
+  }
+  .rating-bar-fill.fill-good {
+    background: linear-gradient(90deg, var(--color-calm) 0%, var(--primary) 100%);
+  }
+  .rating-bar-fill.fill-excellent {
+    background: linear-gradient(90deg, var(--color-success) 0%, var(--primary) 100%);
   }
 
   .pillar-grid {
@@ -711,6 +1025,18 @@
     background: var(--surface-2);
     padding: 10px;
     border-radius: var(--radius-md);
+  }
+  .pillar-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 4px;
+    border-radius: var(--radius-sm);
+    transition: all var(--anim-card);
+  }
+  .pillar-item.item-focus {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.3);
   }
   .pillar-title {
     display: block;
@@ -724,6 +1050,58 @@
     font-weight: 800;
     color: var(--text-heading);
     margin-top: 2px;
+  }
+  .pillar-val.val-focus {
+    color: var(--color-reminder);
+  }
+  .pillar-tag {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .pillar-tag.tag-good {
+    background: var(--color-success-light);
+    color: var(--color-success);
+  }
+  .pillar-tag.tag-focus {
+    background: var(--color-reminder-light);
+    color: var(--color-reminder);
+  }
+
+  .focus-callout {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--color-reminder-light);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+  }
+  .focus-callout-icon {
+    font-size: 18px;
+    color: var(--color-reminder);
+    flex-shrink: 0;
+  }
+  .focus-callout-text {
+    font-size: 0.8rem;
+    color: var(--text-main);
+    line-height: 1.35;
+    text-align: left;
+  }
+  .focus-callout-title {
+    font-weight: 800;
+    color: var(--color-reminder);
+    margin-right: 4px;
+  }
+  .focus-callout-desc {
+    color: var(--text-heading);
+    font-weight: 500;
   }
 
   /* AI Coach Card */

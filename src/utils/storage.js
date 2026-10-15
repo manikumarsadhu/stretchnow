@@ -39,6 +39,10 @@ export const DEFAULT_STATE = {
     completedBreaksToday: 0,
     consecutiveSkips: 0,
     lastBreakTime: Date.now(),
+    todayStarted: false,
+    todayEnded: false,
+    workdayStartedAt: null,
+    workdayEndedAt: null,
     tutorialCompleted: false,
     lastSummaryShownDate: null,
     timeline: [],
@@ -49,7 +53,8 @@ export const DEFAULT_STATE = {
     dailyBreaks: [0, 0, 0, 0, 0, 0, 0],
     weeklyProgress: [0, 0, 0, 0, 0, 0, 0],
     waterIntake: [0, 0, 0, 0, 0, 0, 0],
-    sittingHours: [0, 0, 0, 0, 0, 0, 0]
+    sittingHours: [0, 0, 0, 0, 0, 0, 0],
+    dailyHistory: {}
   },
   timer: {
     durationSeconds: 120,
@@ -87,12 +92,33 @@ export function loadState() {
       const maintainedStreak = parsed.progress.lastActiveDate === yesterday && parsed.progress.completedBreaksToday > 0;
       const isNewWeek = !isSameCalendarWeek(parsed.progress.lastActiveDate, today);
 
+      // Archive previous active day into dailyHistory
+      const prevDate = parsed.progress.lastActiveDate;
+      if (prevDate) {
+        if (!parsed.statistics) parsed.statistics = { ...DEFAULT_STATE.statistics };
+        if (!parsed.statistics.dailyHistory) parsed.statistics.dailyHistory = {};
+        parsed.statistics.dailyHistory[prevDate] = {
+          date: prevDate,
+          breaks: parsed.progress.completedBreaksToday || 0,
+          water: parsed.progress.water || 0,
+          score: parsed.progress.score || 100,
+          todayStarted: !!parsed.progress.todayStarted,
+          workdayStartedAt: parsed.progress.workdayStartedAt || null,
+          workdayEndedAt: parsed.progress.workdayEndedAt || null,
+          timeline: [...(parsed.progress.timeline || [])]
+        };
+      }
+
       parsed.progress = {
         ...parsed.progress,
         water: 0,
         completedBreaksToday: 0,
         consecutiveSkips: 0,
         timeline: [],
+        todayStarted: false,
+        todayEnded: false,
+        workdayStartedAt: null,
+        workdayEndedAt: null,
         streak: maintainedStreak ? parsed.progress.streak + 1 : (parsed.progress.completedBreaksToday > 0 ? parsed.progress.streak : 1),
         lastActiveDate: today
       };
@@ -100,6 +126,7 @@ export function loadState() {
       // Reset weekly stats on new calendar week
       if (isNewWeek) {
         parsed.statistics = {
+          ...parsed.statistics,
           dailyBreaks: [0, 0, 0, 0, 0, 0, 0],
           weeklyProgress: [0, 0, 0, 0, 0, 0, 0],
           waterIntake: [0, 0, 0, 0, 0, 0, 0],

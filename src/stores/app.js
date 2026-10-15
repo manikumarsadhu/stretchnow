@@ -773,22 +773,29 @@ export function incrementWater() {
     const updatedWaterIntake = [...(state.statistics?.waterIntake || [0, 0, 0, 0, 0, 0, 0])];
     updatedWaterIntake[todayIndex] = newWater;
 
+    const nextProgress = {
+      ...state.progress,
+      water: newWater,
+      todayStarted: true,
+      workdayStartedAt: state.progress.workdayStartedAt || new Date().toISOString(),
+      badges: currentBadges,
+      timeline,
+      lastAction: {
+        type: 'water',
+        timestamp: Date.now()
+      }
+    };
+
+    const nextStats = {
+      ...state.statistics,
+      waterIntake: updatedWaterIntake,
+      dailyHistory: updateDailyHistory(state.statistics, nextProgress, state.user)
+    };
+
     const nextState = {
       ...state,
-      progress: {
-        ...state.progress,
-        water: newWater,
-        badges: currentBadges,
-        timeline,
-        lastAction: {
-          type: 'water',
-          timestamp: Date.now()
-        }
-      },
-      statistics: {
-        ...state.statistics,
-        waterIntake: updatedWaterIntake
-      },
+      progress: nextProgress,
+      statistics: nextStats,
       notifications: addedNotifs.length > 0 ? [...addedNotifs, ...(state.notifications || [])].slice(0, 25) : state.notifications
     };
     triggerCloudSync(nextState);
@@ -889,30 +896,37 @@ export function completeBreak(scoreEarned = 50) {
       });
     }
     
+    const nextProgress = {
+      ...state.progress,
+      completedBreaksToday: nextBreaksCompleted,
+      totalCompletedBreaks: totalBreaks,
+      score: state.progress.score + scoreEarned,
+      xp: newXp,
+      level: newLevel,
+      todayStarted: true,
+      workdayStartedAt: state.progress.workdayStartedAt || new Date().toISOString(),
+      badges: currentBadges,
+      consecutiveSkips: 0, // Reset skips
+      lastBreakTime: Date.now(), // Update break time
+      timeline,
+      lastAction: {
+        type: 'stretch',
+        timestamp: Date.now(),
+        scoreEarned
+      }
+    };
+
+    const nextStats = {
+      ...state.statistics,
+      dailyBreaks: updatedDailyBreaks,
+      weeklyProgress: updatedWeeklyProgress,
+      dailyHistory: updateDailyHistory(state.statistics, nextProgress, state.user)
+    };
+
     const nextState = {
       ...state,
-      progress: {
-        ...state.progress,
-        completedBreaksToday: nextBreaksCompleted,
-        totalCompletedBreaks: totalBreaks,
-        score: state.progress.score + scoreEarned,
-        xp: newXp,
-        level: newLevel,
-        badges: currentBadges,
-        consecutiveSkips: 0, // Reset skips
-        lastBreakTime: Date.now(), // Update break time
-        timeline,
-        lastAction: {
-          type: 'stretch',
-          timestamp: Date.now(),
-          scoreEarned
-        }
-      },
-      statistics: {
-        ...state.statistics,
-        dailyBreaks: updatedDailyBreaks,
-        weeklyProgress: updatedWeeklyProgress
-      },
+      progress: nextProgress,
+      statistics: nextStats,
       notifications: addedNotifs.length > 0 ? [...addedNotifs, ...(state.notifications || [])].slice(0, 25) : state.notifications
     };
 
@@ -973,5 +987,103 @@ export function clearAllNotifications() {
     notifications: []
   }));
 }
+
+// ── Workday Targets & Session Tracking ──
+
+function updateDailyHistory(statistics, progress, user) {
+  const todayStr = getLocalDateString();
+  const history = { ...(statistics?.dailyHistory || {}) };
+  history[todayStr] = {
+    date: todayStr,
+    breaks: progress.completedBreaksToday || 0,
+    breakGoal: user.dailyBreakGoal || 6,
+    water: progress.water || 0,
+    waterGoal: user.dailyWaterGoal || 8,
+    score: progress.score || 100,
+    streak: progress.streak || 1,
+    todayStarted: !!progress.todayStarted,
+    workdayStartedAt: progress.workdayStartedAt || null,
+    todayEnded: !!progress.todayEnded,
+    workdayEndedAt: progress.workdayEndedAt || null,
+    timeline: [...(progress.timeline || [])]
+  };
+  return history;
+}
+
+export function startTodayAction() {
+  appStore.update((state) => {
+    const now = new Date();
+    const timeStr = formatTimelineTime(now);
+    const timeline = [...(state.progress.timeline || [])];
+    timeline.push({
+      time: timeStr,
+      type: 'start',
+      label: 'Workday started! Daily targets activated 🎯'
+    });
+
+    const nextProgress = {
+      ...state.progress,
+      todayStarted: true,
+      todayEnded: false,
+      workdayStartedAt: now.toISOString(),
+      timeline
+    };
+
+    const nextStats = {
+      ...state.statistics,
+      dailyHistory: updateDailyHistory(state.statistics, nextProgress, state.user)
+    };
+
+    if (state.settings?.notificationsEnabled) {
+      scheduleStretchReminders(state.settings.reminderIntervalMinutes || 45);
+    }
+
+    const nextState = {
+      ...state,
+      progress: nextProgress,
+      statistics: nextStats
+    };
+
+    triggerCloudSync(nextState);
+    return nextState;
+  });
+}
+
+export function endTodayAction() {
+  appStore.update((state) => {
+    const now = new Date();
+    const timeStr = formatTimelineTime(now);
+    const timeline = [...(state.progress.timeline || [])];
+    timeline.push({
+      time: timeStr,
+      type: 'end',
+      label: 'Workday ended. Great effort today! 👏'
+    });
+
+    const nextProgress = {
+      ...state.progress,
+      todayEnded: true,
+      workdayEndedAt: now.toISOString(),
+      timeline
+    };
+
+    const nextStats = {
+      ...state.statistics,
+      dailyHistory: updateDailyHistory(state.statistics, nextProgress, state.user)
+    };
+
+    stopScheduler();
+
+    const nextState = {
+      ...state,
+      progress: nextProgress,
+      statistics: nextStats
+    };
+
+    triggerCloudSync(nextState);
+    return nextState;
+  });
+}
+
 
 
