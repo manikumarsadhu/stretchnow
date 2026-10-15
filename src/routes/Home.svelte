@@ -4,7 +4,16 @@
   import Button from '../components/Button.svelte';
   import WellnessSummaryModal from '../components/WellnessSummaryModal.svelte';
   import NotificationCenterModal from '../components/NotificationCenterModal.svelte';
-  import { appStore, navigateTo, incrementWater, startTodayAction, endTodayAction } from '../stores/app.js';
+  import {
+    appStore,
+    navigateTo,
+    incrementWater,
+    undoAction,
+    skipBreakAction,
+    startTodayAction,
+    endTodayAction
+  } from '../stores/app.js';
+  import { showToast } from '../stores/toast.js';
   import { calculateWellnessScore, calculateWaterPercentage, calculateBreakGoalPercentage } from '../utils/wellness.js';
   import { triggerConfetti } from '../utils/confetti.js';
 
@@ -42,12 +51,52 @@
 
   function handleStartToday() {
     startTodayAction();
-    showCelebration('🚀 Workday targets activated! Have a great day.');
+    showToast({
+      message: '🚀 Workday started — timers & targets active',
+      icon: 'wb_sunny',
+      type: 'success',
+      duration: 3500
+    });
   }
 
   function handleEndToday() {
     endTodayAction();
-    showCelebration('👏 Workday finished! Well done today.');
+    showToast({
+      message: '👏 Workday finished! Well done today.',
+      icon: 'task_alt',
+      type: 'success',
+      duration: 3500
+    });
+  }
+
+  function handleDrinkWater() {
+    incrementWater();
+    const currentCups = (progress.water || 0) + 1;
+    const goal = user.dailyWaterGoal || 8;
+    showToast({
+      message: `💧 Logged 1 glass of water (${currentCups}/${goal} cups)`,
+      icon: 'water_drop',
+      type: 'info',
+      actionText: 'Undo',
+      onAction: () => {
+        undoAction();
+        showToast({ message: 'Water log undone', icon: 'undo', type: 'info', duration: 2500 });
+      }
+    });
+  }
+
+  function handleSkipBreak() {
+    skipBreakAction();
+    showToast({
+      message: '⏭️ Break skipped. Schedule adjusted',
+      icon: 'skip_next',
+      type: 'warning',
+      actionText: 'Undo',
+      onAction: () => {
+        undoAction();
+        showToast({ message: 'Break skip undone', icon: 'undo', type: 'info', duration: 2500 });
+      }
+    });
   }
 
   // Focus Mode, Summary & Notification Center
@@ -55,8 +104,6 @@
   let isSummaryOpen = false;
   let isNotificationCenterOpen = false;
   $: unreadCount = ($appStore?.notifications || []).filter((n) => n.unread).length;
-  /** @type {ReturnType<typeof setTimeout> | null} */
-  let undoTimeout = null;
 
   // Goals
   $: breakGoal = user.dailyBreakGoal || 6;
@@ -101,52 +148,47 @@
     if (calc) nextBreak = calc;
   }
 
-  // ── Celebration Toast & Confetti ──
-  let celebrationMsg = '';
-  let celebrationVisible = false;
-  let celebrationTimeout = null;
-
-  function showCelebration(msg) {
-    if (celebrationTimeout) clearTimeout(celebrationTimeout);
-    celebrationMsg = msg;
-    celebrationVisible = true;
-    if (settings.celebrationAnimations !== false) {
-      triggerConfetti();
-    }
-    celebrationTimeout = setTimeout(() => { celebrationVisible = false; }, 2500);
-  }
-
-  // Detect milestone changes
-  let prevBreaksToday = 0;
-  let prevWater       = 0;
-  let prevLevel       = 1;
-  let prevStreak      = 1;
+  // ── Milestone Tracking (only fires on user interaction, never on initial mount) ──
+  let prevBreaksToday = null;
+  let prevWater = null;
+  let prevLevel = null;
 
   $: {
     if (progress) {
       const breaksNow = progress.completedBreaksToday || 0;
       const waterNow  = progress.water || 0;
       const levelNow  = progress.level || 1;
-      const streakNow = progress.streak || 1;
 
-      if (breaksNow > prevBreaksToday) {
-        if (prevBreaksToday === 0 && breaksNow === 1) showCelebration('🎉 First stretch completed!');
-        else if (breaksNow >= breakGoal && prevBreaksToday < breakGoal) showCelebration('🎯 Daily break goal reached!');
-      }
-      if (waterNow >= waterGoal && prevWater < waterGoal) {
-        showCelebration('💧 Daily hydration goal reached!');
-      }
-      if (levelNow > prevLevel) { showCelebration(`⬆️ Level Up! You're now Level ${levelNow}!`); }
-      if (streakNow > prevStreak && streakNow > 1) { showCelebration(`🔥 ${streakNow}-day streak! Keep it up!`); }
+      if (prevBreaksToday === null) {
+        /* eslint-disable no-useless-assignment */
+        prevBreaksToday = breaksNow;
+        prevWater = waterNow;
+        prevLevel = levelNow;
+        /* eslint-enable no-useless-assignment */
+      } else {
+        if (breaksNow > prevBreaksToday) {
+          if (prevBreaksToday === 0 && breaksNow === 1) {
+            showToast({ message: '🎉 First stretch completed today!', icon: 'self_improvement', type: 'success' });
+          } else if (breaksNow >= breakGoal && prevBreaksToday < breakGoal) {
+            showToast({ message: '🎯 Daily break goal reached!', icon: 'emoji_events', type: 'success' });
+            if (settings.celebrationAnimations !== false) triggerConfetti();
+          }
+        }
+        if (waterNow >= waterGoal && prevWater < waterGoal) {
+          showToast({ message: `💧 Daily hydration goal reached (${waterGoal}/${waterGoal} cups)!`, icon: 'emoji_events', type: 'success' });
+          if (settings.celebrationAnimations !== false) triggerConfetti();
+        }
+        if (levelNow > prevLevel) {
+          showToast({ message: `⬆️ Level Up! You're now Level ${levelNow}!`, icon: 'military_tech', type: 'success' });
+          if (settings.celebrationAnimations !== false) triggerConfetti();
+        }
 
-      // eslint-disable-next-line no-useless-assignment
-      prevBreaksToday = breaksNow;
-      // eslint-disable-next-line no-useless-assignment
-      prevWater  = waterNow;
-      // eslint-disable-next-line no-useless-assignment
-      prevLevel  = levelNow;
-      // eslint-disable-next-line no-useless-assignment
-      prevStreak = streakNow;
+        /* eslint-disable no-useless-assignment */
+        prevBreaksToday = breaksNow;
+        prevWater = waterNow;
+        prevLevel = levelNow;
+        /* eslint-enable no-useless-assignment */
+      }
     }
   }
 
@@ -159,19 +201,10 @@
 
   onDestroy(() => {
     if (nextBreakInterval) clearInterval(nextBreakInterval);
-    if (undoTimeout) clearTimeout(undoTimeout);
-    if (celebrationTimeout) clearTimeout(celebrationTimeout);
   });
 </script>
 
 <div class="home-screen animate-fade-in">
-
-  <!-- ── Celebration Toast ── -->
-  {#if celebrationVisible}
-    <div class="celebration-toast animate-fade-in" role="status" aria-live="polite">
-      <span class="toast-text">{celebrationMsg}</span>
-    </div>
-  {/if}
 
   <!-- ── 1. DYNAMIC HEADER & GREETING ── -->
   <header class="top-header">
@@ -220,7 +253,7 @@
         <Button variant="primary" size="lg" icon="play_arrow" fullWidth onclick={() => navigateTo('break')}>
           Start Focus Stretch
         </Button>
-        <button type="button" class="focus-water-btn" on:click={incrementWater}>
+        <button type="button" class="focus-water-btn" on:click={handleDrinkWater}>
           <span class="material-symbols-outlined">water_drop</span>
           <span>Log Glass ({progress.water || 0} logged)</span>
         </button>
@@ -459,11 +492,11 @@
 
     <!-- ── 6. QUICK ACTIONS BAR ── -->
     <section class="quick-actions-bar">
-      <button type="button" class="qa-pill qa-water" on:click={incrementWater}>
+      <button type="button" class="qa-pill qa-water" on:click={handleDrinkWater}>
         <span class="material-symbols-outlined">water_drop</span>
         <span>+ Drink Water</span>
       </button>
-      <button type="button" class="qa-pill qa-skip" on:click={() => navigateTo('break')}>
+      <button type="button" class="qa-pill qa-skip" on:click={handleSkipBreak}>
         <span class="material-symbols-outlined">skip_next</span>
         <span>Skip Break</span>
       </button>
@@ -1210,19 +1243,4 @@
   .qa-water { color: var(--color-calm); }
   .qa-skip { color: var(--color-reminder); }
   .qa-focus { color: var(--color-ai); }
-
-  .celebration-toast {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #0f172a;
-    color: #ffffff;
-    padding: 10px 20px;
-    border-radius: 99px;
-    font-size: 0.9rem;
-    font-weight: 700;
-    z-index: 10000;
-    box-shadow: var(--shadow-lg);
-  }
 </style>

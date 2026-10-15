@@ -3,7 +3,8 @@
   import Countdown from '../components/Countdown.svelte';
   import Button from '../components/Button.svelte';
   import Card from '../components/Card.svelte';
-  import { appStore, completeBreak, navigateTo } from '../stores/app.js';
+  import { appStore, completeBreak, undoAction, navigateTo } from '../stores/app.js';
+  import { showToast } from '../stores/toast.js';
   import { startTimer, pauseTimer, resetTimer } from '../utils/timer.js';
   import { STRETCHES } from '../utils/stretches.js';
   import StretchAnimation from '../components/StretchAnimation.svelte';
@@ -78,6 +79,16 @@
           playCelebrationSound($appStore.settings?.celebrationSound || 'victory');
         }
         completeBreak(50);
+        showToast({
+          message: '🎉 2-Minute stretch completed (+50 XP)!',
+          icon: 'emoji_events',
+          type: 'success',
+          actionText: 'Undo',
+          onAction: () => {
+            undoAction();
+            showToast({ message: 'Stretch log undone', icon: 'undo', type: 'info', duration: 2500 });
+          }
+        });
       }
     );
   }
@@ -106,7 +117,19 @@
   }
 
   function handleFinish() {
-    if (!isCompleted) completeBreak(30);
+    if (!isCompleted) {
+      completeBreak(30);
+      showToast({
+        message: '🧘 Stretch routine logged (+30 XP)!',
+        icon: 'check_circle',
+        type: 'success',
+        actionText: 'Undo',
+        onAction: () => {
+          undoAction();
+          showToast({ message: 'Stretch log undone', icon: 'undo', type: 'info', duration: 2500 });
+        }
+      });
+    }
     handlePause();
     navigateTo('home');
   }

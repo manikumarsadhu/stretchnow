@@ -6,6 +6,7 @@
   import Modal from '../components/Modal.svelte';
   import AuthModal from '../components/AuthModal.svelte';
   import { appStore, updateSettings, resetAppState, navigateTo, logoutAppwriteSession, checkAndSyncAuth, importBackupAction, updateProfile, triggerAlarmRing } from '../stores/app.js';
+  import { showToast } from '../stores/toast.js';
   import { requestNotificationPermission, sendStretchNotification, playAlertSound, playCelebrationSound } from '../utils/notifications.js';
   import { exportBackup, importBackup } from '../services/backup.js';
   import { runSystemDiagnostics } from '../services/diagnostics.js';
@@ -129,32 +130,50 @@
   }
 
   function handleLunchStartChange(e) {
-    const smartSchedule = settings.smartSchedule || {};
+    const val = e.currentTarget?.value || e.target?.value;
+    if (!val) return;
     updateSettings({
       smartSchedule: {
-        ...smartSchedule,
-        lunchStart: e.target.value
+        lunchStart: val
       }
+    });
+    showToast({
+      message: `Lunch start updated to ${val}`,
+      icon: 'schedule',
+      type: 'success',
+      duration: 2500
     });
   }
 
   function handleLunchEndChange(e) {
-    const smartSchedule = settings.smartSchedule || {};
+    const val = e.currentTarget?.value || e.target?.value;
+    if (!val) return;
     updateSettings({
       smartSchedule: {
-        ...smartSchedule,
-        lunchEnd: e.target.value
+        lunchEnd: val
       }
+    });
+    showToast({
+      message: `Lunch end updated to ${val}`,
+      icon: 'schedule',
+      type: 'success',
+      duration: 2500
     });
   }
 
   function handleSnoozeDurationChange(e) {
-    const smartSchedule = settings.smartSchedule || {};
+    const val = Number(e.currentTarget?.value || e.target?.value);
+    if (!val) return;
     updateSettings({
       smartSchedule: {
-        ...smartSchedule,
-        snoozeDuration: Number(e.target.value)
+        snoozeDuration: val
       }
+    });
+    showToast({
+      message: `Snooze duration set to ${val} mins`,
+      icon: 'snooze',
+      type: 'success',
+      duration: 2500
     });
   }
 
@@ -459,6 +478,7 @@
             id="lunchStart"
             type="time"
             value={settings.smartSchedule?.lunchStart || '12:00'}
+            on:input={handleLunchStartChange}
             on:change={handleLunchStartChange}
           />
         </div>
@@ -468,6 +488,7 @@
             id="lunchEnd"
             type="time"
             value={settings.smartSchedule?.lunchEnd || '13:00'}
+            on:input={handleLunchEndChange}
             on:change={handleLunchEndChange}
           />
         </div>
@@ -475,7 +496,12 @@
 
       <div class="snooze-duration-wrap">
         <label class="input-label" for="snooze">Snooze Duration (minutes)</label>
-        <select id="snooze" class="preference-select" value={settings.smartSchedule?.snoozeDuration || 15} on:change={handleSnoozeDurationChange}>
+        <select
+          id="snooze"
+          class="preference-select"
+          value={settings.smartSchedule?.snoozeDuration ?? 15}
+          on:change={handleSnoozeDurationChange}
+        >
           <option value={5}>5 minutes</option>
           <option value={10}>10 minutes</option>
           <option value={15}>15 minutes (Default)</option>

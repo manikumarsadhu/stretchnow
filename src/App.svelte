@@ -21,6 +21,7 @@
   import SnoozeBanner from './components/SnoozeBanner.svelte';
   import AdaptiveIntervalModal from './components/AdaptiveIntervalModal.svelte';
   import HealthChatbotModal from './components/HealthChatbotModal.svelte';
+  import Snackbar from './components/Snackbar.svelte';
   import { closeAdaptiveModal } from './stores/app.js';
   import { getRouteMetadata } from './lib/seo.js';
 
@@ -161,6 +162,8 @@
   {#if $appStore.showAdaptiveModal}
     <AdaptiveIntervalModal isOpen={true} onclose={closeAdaptiveModal} />
   {/if}
+
+  <Snackbar />
 </div>
 
 <style>

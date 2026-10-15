@@ -234,12 +234,23 @@ export async function checkAndSyncAuth() {
               notificationsEnabled: remoteSettings.notificationEnabled,
               largeTextEnabled: remoteSettings.largeText,
               highContrastEnabled: remoteSettings.highContrast,
+              smartSchedule: {
+                weekendMode: remoteSettings.weekendMode ?? state.settings.smartSchedule?.weekendMode ?? false,
+                lunchStart: remoteSettings.lunchStart || state.settings.smartSchedule?.lunchStart || '12:00',
+                lunchEnd: remoteSettings.lunchEnd || state.settings.smartSchedule?.lunchEnd || '13:00',
+                snoozeDuration: state.settings.smartSchedule?.snoozeDuration ?? 15,
+                activeMeetingMode: state.settings.smartSchedule?.activeMeetingMode ?? false
+              },
               updatedAt: remoteSettings.updatedAt
             }
           );
           nextState.settings = {
             ...nextState.settings,
-            ...mergedSettings
+            ...mergedSettings,
+            smartSchedule: {
+              ...(nextState.settings.smartSchedule || {}),
+              ...(mergedSettings.smartSchedule || {})
+            }
           };
         }
 
@@ -349,7 +360,12 @@ export function updateSettings(settingsData) {
   appStore.update((state) => {
     const updatedSettings = {
       ...state.settings,
-      ...settingsData
+      ...settingsData,
+      smartSchedule: {
+        ...(state.settings?.smartSchedule || {}),
+        ...(settingsData.smartSchedule || {})
+      },
+      updatedAt: new Date().toISOString()
     };
     
     if (updatedSettings.notificationsEnabled) {
@@ -364,10 +380,13 @@ export function updateSettings(settingsData) {
       stopScheduler();
     }
     
-    return {
+    const nextState = {
       ...state,
       settings: updatedSettings
     };
+
+    triggerCloudSync(nextState);
+    return nextState;
   });
 }
 

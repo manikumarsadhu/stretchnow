@@ -17,7 +17,17 @@ export function mergeProfile(local, cloud) {
 export function mergeSettings(local, cloud) {
   const localTime = new Date(local.updatedAt || 0).getTime();
   const cloudTime = new Date(cloud.updatedAt || 0).getTime();
-  return localTime >= cloudTime ? local : cloud;
+  const winner = localTime >= cloudTime ? local : cloud;
+  return {
+    ...local,
+    ...cloud,
+    ...winner,
+    smartSchedule: {
+      ...(local.smartSchedule || {}),
+      ...(cloud.smartSchedule || {}),
+      ...(winner.smartSchedule || {})
+    }
+  };
 }
 
 /**
